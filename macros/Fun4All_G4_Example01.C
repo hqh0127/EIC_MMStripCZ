@@ -164,7 +164,11 @@ void Fun4All_G4_Example01(int nEvents = 1)
 
   G4HitNtuple *hits = new G4HitNtuple("Hits");
   hits->AddNode("SVTX",0);
+  hits->AddNode("BMT",1);
   se->registerSubsystem(hits);
+  
+  //CreateCZHitContainer* cz = new CreateCZHitContainer("G4HIT_BMT");
+  //se->registerSubsystem(cz);
   
   //---------------------------
   // fast pattern recognition and full Kalman filter
@@ -180,19 +184,19 @@ void Fun4All_G4_Example01(int nEvents = 1)
   //kalman->set_do_evt_display(true);
 
   //  add Si Trtacker
-  kalman->add_phg4hits(
-      "G4HIT_SVTX",                //      const std::string& phg4hitsNames,
-      PHG4TrackFastSim::Cylinder,  //      const DETECTOR_TYPE phg4dettype,
-      300e-4,                      //       radial-resolution [cm]
-      300e-4,                       //        azimuthal-resolution [cm]
-      1,                           //      z-resolution [cm]
-      1,                           //      efficiency,
-      0                            //      noise hits
-  );
+  //kalman->add_phg4hits(
+  //    "G4HIT_SVTX",                //      const std::string& phg4hitsNames,
+  //    PHG4TrackFastSim::Cylinder,  //      const DETECTOR_TYPE phg4dettype,
+  //    300e-4,                      //       radial-resolution [cm]
+  //    300e-4,                       //        azimuthal-resolution [cm]
+  //    1,                           //      z-resolution [cm]
+  //    1,                           //      efficiency,
+  //    0                            //      noise hits
+  //);
   kalman->add_phg4hits(
       "G4HIT_BMT",                //      const std::string& phg4hitsNames,
       PHG4TrackFastSim::Cylinder,  //      const DETECTOR_TYPE phg4dettype,
-      0.5,                      //       radial-resolution [cm]
+      2.5/2/sqrt(12),                      //       radial-resolution [cm], only used for Vertical Plane Detector Type
       150e-4,                       //        azimuthal-resolution [cm]
       150e-4,                           //      z-resolution [cm]
       1,                           //      efficiency,

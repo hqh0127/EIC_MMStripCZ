@@ -5,6 +5,7 @@
 
 #include <g4main/PHG4Detector.h>
 
+#include <set>
 #include <string>
 
 class G4LogicalVolume;
@@ -27,7 +28,7 @@ class PHG4CylinderStripDetector : public PHG4Detector
   //! construct
   void ConstructMe(G4LogicalVolume *world);
 
-  bool IsInCylinder(const G4VPhysicalVolume *) const;
+  bool IsInDetector(G4VPhysicalVolume *) const;
   void SuperDetector(const std::string &name) { m_SuperDetector = name; }
   const std::string SuperDetector() const { return m_SuperDetector; }
   int get_Layer() const { return m_Layer; }
@@ -36,6 +37,8 @@ class PHG4CylinderStripDetector : public PHG4Detector
   PHParameters *m_Params;
 
   G4VPhysicalVolume *m_CylinderPhysicalVolume;
+  
+  std::set<G4VPhysicalVolume*> m_PhysicalVolumesSet;
 
   int m_Layer;
   std::string m_SuperDetector;

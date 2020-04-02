@@ -14,6 +14,8 @@
 
 #include <phool/getClass.h>
 
+#include <TSystem.h>
+
 #include <Geant4/G4ParticleDefinition.hh>      // for G4ParticleDefinition
 #include <Geant4/G4ReferenceCountedHandle.hh>  // for G4ReferenceCountedHandle
 #include <Geant4/G4Step.hh>
@@ -87,7 +89,7 @@ bool PHG4CylinderStripSteppingAction::UserSteppingAction(const G4Step* aStep, bo
   G4VPhysicalVolume* volume = touch->GetVolume();
   // G4 just calls  UserSteppingAction for every step (and we loop then over all our
   // steppingactions. First we have to check if we are actually in our volume
-  if (!m_Detector->IsInCylinder(volume))
+  if (!m_Detector->IsInDetector(volume))
   {
     return false;
   }
@@ -219,7 +221,7 @@ bool PHG4CylinderStripSteppingAction::UserSteppingAction(const G4Step* aStep, bo
            << " post vol : " << touchpost->GetVolume()->GetName() << endl;
       cout << " previous phys pre vol: " << m_SaveVolPre->GetName()
            << " previous phys post vol: " << m_SaveVolPost->GetName() << endl;
-      exit(1);
+      gSystem->Exit(1);
     }
     m_SavePostStepStatus = postPoint->GetStepStatus();
     // check if track id matches the initial one when the hit was created
@@ -229,7 +231,7 @@ bool PHG4CylinderStripSteppingAction::UserSteppingAction(const G4Step* aStep, bo
       cout << "saved track: " << m_SaveTrackId
            << ", current trackid: " << aTrack->GetTrackID()
            << endl;
-      exit(1);
+      gSystem->Exit(1);
     }
     m_SavePreStepStatus = prePoint->GetStepStatus();
     m_SavePostStepStatus = postPoint->GetStepStatus();

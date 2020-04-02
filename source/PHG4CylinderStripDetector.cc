@@ -38,12 +38,15 @@ PHG4CylinderStripDetector::PHG4CylinderStripDetector(PHG4Subsystem *subsys, PHCo
 }
 
 //_______________________________________________________________
-bool PHG4CylinderStripDetector::IsInCylinder(const G4VPhysicalVolume *volume) const
+bool PHG4CylinderStripDetector::IsInDetector(G4VPhysicalVolume *volume) const
 {
-  if (volume == m_CylinderPhysicalVolume)
+  set<G4VPhysicalVolume *>::const_iterator iter =
+      m_PhysicalVolumesSet.find(volume);
+  if (iter != m_PhysicalVolumesSet.end())
   {
     return true;
   }
+
   return false;
 }
 
@@ -105,14 +108,16 @@ void PHG4CylinderStripDetector::ConstructMe(G4LogicalVolume *logicWorld)
 
   PHG4Subsystem *mysys = GetMySubsystem();
   mysys->SetLogicalVolume(cylinder_logic);
-  new G4PVPlacement(0, G4ThreeVector(0,0,0),
-                    cylinder_logic_C,
-                    G4String(GetName())+"CTilePhys",
-                    cylinder_logic, 0, false, OverlapCheck());
-  new G4PVPlacement(0, G4ThreeVector(0,0,0),
-                    cylinder_logic_Z,
-                    G4String(GetName())+"ZTilePhys",
-                    cylinder_logic, 0, false, OverlapCheck());
+  m_CylinderPhysicalVolume = new G4PVPlacement(0, G4ThreeVector(0,0,0),
+                                               cylinder_logic_C,
+                                               G4String(GetName())+"CTilePhys",
+                                               cylinder_logic, 0, false, OverlapCheck());
+  m_PhysicalVolumesSet.insert(m_CylinderPhysicalVolume);
+  m_CylinderPhysicalVolume = new G4PVPlacement(0, G4ThreeVector(0,0,0),
+                                               cylinder_logic_Z,
+                                               G4String(GetName())+"ZTilePhys",
+                                               cylinder_logic, 0, false, OverlapCheck());
+  m_PhysicalVolumesSet.insert(m_CylinderPhysicalVolume);
   m_CylinderPhysicalVolume = new G4PVPlacement(0, G4ThreeVector(m_Params->get_double_param("place_x") * cm, m_Params->get_double_param("place_y") * cm, m_Params->get_double_param("place_z") * cm),
                                                cylinder_logic,
                                                G4String(GetName()),

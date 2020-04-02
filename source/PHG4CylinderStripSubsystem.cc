@@ -99,7 +99,7 @@ int PHG4CylinderStripSubsystem::InitRunSubsystem(PHCompositeNode *topNode)
     //}
     //PHG4CylinderStripGeom *mygeom = new PHG4CylinderStripGeomv1(GetParams()->get_double_param("radius"), GetParams()->get_double_param("place_z") - detlength / 2., GetParams()->get_double_param("place_z") + detlength / 2., GetParams()->get_double_param("thickness"));
     //geo->AddLayerGeom(GetLayer(), mygeom);
-    //m_SteppingAction = new PHG4CylinderStripSteppingAction(m_Detector, GetParams());
+    m_SteppingAction = new PHG4CylinderStripSteppingAction(m_Detector, GetParams());
   }
   else if (GetParams()->get_int_param("blackhole"))
   {
