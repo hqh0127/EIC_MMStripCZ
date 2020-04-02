@@ -1,5 +1,7 @@
 #include "PHG4CylinderStripDetector.h"
 
+#include <phparameter/PHParameters.h>
+
 #include <g4main/PHG4Detector.h>       // for PHG4Detector
 #include <g4main/PHG4DisplayAction.h>  // for PHG4DisplayAction
 #include <g4main/PHG4Subsystem.h>
@@ -13,6 +15,7 @@
 #include <Geant4/G4ThreeVector.hh>  // for G4ThreeVector
 #include <Geant4/G4Tubs.hh>
 #include <Geant4/G4UserLimits.hh>
+#include <Geant4/G4VisAttributes.hh>
 
 #include <TSystem.h>
 
@@ -26,7 +29,7 @@ class PHCompositeNode;
 using namespace std;
 
 //_______________________________________________________________
-PHG4CylinderStripDetector::PHG4CylinderStripDetector(PHG4Subsystem *subsys, PHCompositeNode *Node, PHParameters *parameters, const std::string &dnam, const int lyr
+PHG4CylinderStripDetector::PHG4CylinderStripDetector(PHG4Subsystem *subsys, PHCompositeNode *Node, PHParameters *parameters, const std::string &dnam, const int lyr)
   : PHG4Detector(subsys, Node, dnam)
   , m_Params(parameters)
   , m_CylinderPhysicalVolume(nullptr)
@@ -90,6 +93,16 @@ void PHG4CylinderStripDetector::ConstructMe(G4LogicalVolume *logicWorld)
                                                         TrackerMaterial,
                                                         G4String(GetName())+"ZTileLogic",
                                                         nullptr, nullptr, g4userlimits);
+  G4VisAttributes *vis = new G4VisAttributes(G4Color(G4Colour::Grey())); // grey is good to see the tracks in the display
+  vis->SetForceSolid(true);
+  cylinder_logic_C->SetVisAttributes(vis);
+  cylinder_logic_Z->SetVisAttributes(vis);
+  
+  vis = new G4VisAttributes(G4Color(G4Colour::Grey())); // grey is good to see the tracks in the display
+  vis->SetForceSolid(true);
+  vis->SetVisibility(false);
+  cylinder_logic->SetVisAttributes(vis);
+
   PHG4Subsystem *mysys = GetMySubsystem();
   mysys->SetLogicalVolume(cylinder_logic);
   new G4PVPlacement(0, G4ThreeVector(0,0,0),

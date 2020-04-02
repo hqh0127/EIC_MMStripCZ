@@ -21,7 +21,9 @@ libg4example01detector_la_LIBADD = \
   -lg4testbench 
 
 pkginclude_HEADERS = \
-  G4Example01Subsystem.h
+  PHG4CylinderStripDetector.h \
+  PHG4CylinderStripSteppingAction.h \
+  PHG4CylinderStripSubsystem.h
 
 # I/O dictionaries have to exist for root5 and root6. For ROOT6 we need
 # pcm files in addition. If someone can figure out how to make a list
@@ -46,9 +48,9 @@ endif
 
 libg4example01detector_la_SOURCES = \
   $(ROOT5_DICTS) \
-  G4Example01Detector.cc \
-  G4Example01Subsystem.cc \
-  G4Example01SteppingAction.cc
+  PHG4CylinderStripDetector.cc \
+  PHG4CylinderStripSteppingAction.cc \
+  PHG4CylinderStripSubsystem.cc
 
 # Rule for generating table CINT dictionaries.
 %_Dict.cc: %.h %LinkDef.h

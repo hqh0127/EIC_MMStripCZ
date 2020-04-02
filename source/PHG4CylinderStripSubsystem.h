@@ -3,7 +3,7 @@
 #ifndef G4DETECTORS_PHG4CYLINDERSTRIPSUBSYSTEM_H
 #define G4DETECTORS_PHG4CYLINDERSTRIPSUBSYSTEM_H
 
-#include "PHG4DetectorSubsystem.h"
+#include <g4detectors/PHG4DetectorSubsystem.h>
 
 #if !defined(__CINT__) || defined(__CLING__)
 #include <array>   // for array
@@ -12,7 +12,7 @@
 #include <string>  // for string
 
 class PHCompositeNode;
-class PHG4CylinderDetector;
+class PHG4CylinderStripDetector;
 class PHG4Detector;
 class PHG4DisplayAction;
 class PHG4SteppingAction;

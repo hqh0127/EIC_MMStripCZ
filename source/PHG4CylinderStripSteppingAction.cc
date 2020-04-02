@@ -1,6 +1,6 @@
-#include "PHG4CylinderSteppingAction.h"
-#include "PHG4CylinderDetector.h"
-#include "PHG4StepStatusDecode.h"
+#include "PHG4CylinderStripSteppingAction.h"
+#include "PHG4CylinderStripDetector.h"
+#include <g4detectors/PHG4StepStatusDecode.h>
 
 #include <phparameter/PHParameters.h>
 
@@ -42,7 +42,7 @@ class PHCompositeNode;
 
 using namespace std;
 //____________________________________________________________________________..
-PHG4CylinderSteppingAction::PHG4CylinderSteppingAction(PHG4CylinderDetector* detector, const PHParameters* parameters)
+PHG4CylinderStripSteppingAction::PHG4CylinderStripSteppingAction(PHG4CylinderStripDetector* detector, const PHParameters* parameters)
   :  PHG4SteppingAction(detector->GetName())
   , m_Detector(detector)
   , m_Params(parameters)
@@ -68,7 +68,7 @@ PHG4CylinderSteppingAction::PHG4CylinderSteppingAction(PHG4CylinderDetector* det
   m_Zmax += copysign(m_Zmax, 1. / 1e6 * cm);
 }
 
-PHG4CylinderSteppingAction::~PHG4CylinderSteppingAction()
+PHG4CylinderStripSteppingAction::~PHG4CylinderStripSteppingAction()
 {
   // if the last hit was a zero energie deposit hit, it is just reset
   // and the memory is still allocated, so we need to delete it here
@@ -78,7 +78,7 @@ PHG4CylinderSteppingAction::~PHG4CylinderSteppingAction()
 }
 
 //____________________________________________________________________________..
-bool PHG4CylinderSteppingAction::UserSteppingAction(const G4Step* aStep, bool)
+bool PHG4CylinderStripSteppingAction::UserSteppingAction(const G4Step* aStep, bool)
 {
   // get volume of the current step
   G4TouchableHandle touch = aStep->GetPreStepPoint()->GetTouchableHandle();
@@ -196,7 +196,7 @@ bool PHG4CylinderSteppingAction::UserSteppingAction(const G4Step* aStep, bool)
       {
         boost::io::ios_precision_saver ips(cout);
         cout << m_Detector->SuperDetector() << std::setprecision(9)
-             << "PHG4CylinderSteppingAction: Entry hit z " << m_Hit->get_z(0) * cm
+             << "PHG4CylinderStripSteppingAction: Entry hit z " << m_Hit->get_z(0) * cm
              << " outside acceptance,  zmin " << m_Zmin
              << ", zmax " << m_Zmax << ", layer: " << layer_id << endl;
       }
@@ -250,7 +250,7 @@ bool PHG4CylinderSteppingAction::UserSteppingAction(const G4Step* aStep, bool)
     if (m_Hit->get_z(1) * cm > m_Zmax || m_Hit->get_z(1) * cm < m_Zmin)
     {
       cout << m_Detector->SuperDetector() << std::setprecision(9)
-           << " PHG4CylinderSteppingAction: Exit hit z " << m_Hit->get_z(1) * cm
+           << " PHG4CylinderStripSteppingAction: Exit hit z " << m_Hit->get_z(1) * cm
            << " outside acceptance zmin " << m_Zmin
            << ", zmax " << m_Zmax << ", layer: " << layer_id << endl;
     }
@@ -325,7 +325,7 @@ bool PHG4CylinderSteppingAction::UserSteppingAction(const G4Step* aStep, bool)
 }
 
 //____________________________________________________________________________..
-void PHG4CylinderSteppingAction::SetInterfacePointers(PHCompositeNode* topNode)
+void PHG4CylinderStripSteppingAction::SetInterfacePointers(PHCompositeNode* topNode)
 {
   string hitnodename;
   if (m_Detector->SuperDetector() != "NONE")
@@ -343,6 +343,6 @@ void PHG4CylinderSteppingAction::SetInterfacePointers(PHCompositeNode* topNode)
   // if we do not find the node we need to make it.
   if (!m_HitContainer && !m_BlackHoleFlag)
   {
-    std::cout << "PHG4CylinderSteppingAction::SetTopNode - unable to find " << hitnodename << std::endl;
+    std::cout << "PHG4CylinderStripSteppingAction::SetTopNode - unable to find " << hitnodename << std::endl;
   }
 }

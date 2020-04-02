@@ -1,27 +1,27 @@
 // Tell emacs that this is a C++ source
 //  -*- C++ -*-.
-#ifndef G4DETECTORS_PHG4CYLINDERSTEPPINGACTION_H
-#define G4DETECTORS_PHG4CYLINDERSTEPPINGACTION_H
+#ifndef G4DETECTORS_PHG4CYLINDERSTRIPSTEPPINGACTION_H
+#define G4DETECTORS_PHG4CYLINDERSTRIPSTEPPINGACTION_H
 
 #include <g4main/PHG4SteppingAction.h>
 
 class G4Step;
 class G4VPhysicalVolume;
 class PHCompositeNode;
-class PHG4CylinderDetector;
+class PHG4CylinderStripDetector;
 class PHG4Hit;
 class PHG4HitContainer;
 class PHG4Shower;
 class PHParameters;
 
-class PHG4CylinderSteppingAction : public PHG4SteppingAction
+class PHG4CylinderStripSteppingAction : public PHG4SteppingAction
 {
  public:
   //! constructor
-  PHG4CylinderSteppingAction(PHG4CylinderDetector *, const PHParameters *parameters);
+  PHG4CylinderStripSteppingAction(PHG4CylinderStripDetector *, const PHParameters *parameters);
 
   //! destructor
-  virtual ~PHG4CylinderSteppingAction();
+  virtual ~PHG4CylinderStripSteppingAction();
 
   //! stepping action
   bool UserSteppingAction(const G4Step *, bool);
@@ -33,7 +33,7 @@ class PHG4CylinderSteppingAction : public PHG4SteppingAction
 
  private:
   //! pointer to the detector
-  PHG4CylinderDetector *m_Detector;
+  PHG4CylinderStripDetector *m_Detector;
 
   const PHParameters *m_Params;
 
