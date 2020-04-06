@@ -51,6 +51,30 @@ bool PHG4CylinderStripDetector::IsInDetector(G4VPhysicalVolume *volume) const
 }
 
 //_______________________________________________________________
+
+bool PHG4CylinderStripDetector::IsInTileC(G4VPhysicalVolume *volume) const
+{
+  if (volume == m_CylinderCPhysicalVolume)
+  {
+    return true;
+  }
+
+  return false;
+}
+
+//_______________________________________________________________
+
+bool PHG4CylinderStripDetector::IsInTileZ(G4VPhysicalVolume *volume) const
+{
+  if (volume == m_CylinderZPhysicalVolume)
+  {
+    return true;
+  }
+
+  return false;
+}
+
+//_______________________________________________________________
 void PHG4CylinderStripDetector::ConstructMe(G4LogicalVolume *logicWorld)
 {
   G4Material *TrackerMaterial = G4Material::GetMaterial(m_Params->get_string_param("material"));
@@ -108,16 +132,16 @@ void PHG4CylinderStripDetector::ConstructMe(G4LogicalVolume *logicWorld)
 
   PHG4Subsystem *mysys = GetMySubsystem();
   mysys->SetLogicalVolume(cylinder_logic);
-  m_CylinderPhysicalVolume = new G4PVPlacement(0, G4ThreeVector(0,0,0),
+  m_CylinderCPhysicalVolume = new G4PVPlacement(0, G4ThreeVector(0,0,0),
                                                cylinder_logic_C,
                                                G4String(GetName())+"CTilePhys",
                                                cylinder_logic, 0, false, OverlapCheck());
-  m_PhysicalVolumesSet.insert(m_CylinderPhysicalVolume);
-  m_CylinderPhysicalVolume = new G4PVPlacement(0, G4ThreeVector(0,0,0),
+  m_PhysicalVolumesSet.insert(m_CylinderCPhysicalVolume);
+  m_CylinderZPhysicalVolume = new G4PVPlacement(0, G4ThreeVector(0,0,0),
                                                cylinder_logic_Z,
                                                G4String(GetName())+"ZTilePhys",
                                                cylinder_logic, 0, false, OverlapCheck());
-  m_PhysicalVolumesSet.insert(m_CylinderPhysicalVolume);
+  m_PhysicalVolumesSet.insert(m_CylinderZPhysicalVolume);
   m_CylinderPhysicalVolume = new G4PVPlacement(0, G4ThreeVector(m_Params->get_double_param("place_x") * cm, m_Params->get_double_param("place_y") * cm, m_Params->get_double_param("place_z") * cm),
                                                cylinder_logic,
                                                G4String(GetName()),

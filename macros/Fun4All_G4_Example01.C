@@ -18,6 +18,7 @@
 #include <g4trackfastsim/PHG4TrackFastSim.h>
 #include <g4trackfastsim/PHG4TrackFastSimEval.h>
 #include <g4exampledetector/PHG4CylinderStripSubsystem.h>
+#include <g4exampledetector/CreateCZHitContainer.h>
 #include <phool/recoConsts.h>
 #include <phpythia6/PHPythia6.h>
 
@@ -167,8 +168,8 @@ void Fun4All_G4_Example01(int nEvents = 1)
   hits->AddNode("BMT",1);
   se->registerSubsystem(hits);
   
-  //CreateCZHitContainer* cz = new CreateCZHitContainer("G4HIT_BMT");
-  //se->registerSubsystem(cz);
+  CreateCZHitContainer* cz = new CreateCZHitContainer("BMT");
+  se->registerSubsystem(cz);
   
   //---------------------------
   // fast pattern recognition and full Kalman filter
@@ -194,7 +195,7 @@ void Fun4All_G4_Example01(int nEvents = 1)
   //    0                            //      noise hits
   //);
   kalman->add_phg4hits(
-      "G4HIT_BMT",                //      const std::string& phg4hitsNames,
+      "G4HITCZ_BMT",                //      const std::string& phg4hitsNames,
       PHG4TrackFastSim::Cylinder,  //      const DETECTOR_TYPE phg4dettype,
       2.5/2/sqrt(12),                      //       radial-resolution [cm], only used for Vertical Plane Detector Type
       150e-4,                       //        azimuthal-resolution [cm]
@@ -207,6 +208,48 @@ void Fun4All_G4_Example01(int nEvents = 1)
   PHG4TrackFastSimEval *fast_sim_eval = new PHG4TrackFastSimEval("FastTrackingEval",
       "FastTrackingEval_BMT.root",
       "BMTTrackMap"
+      );
+  //fast_sim_eval->set_filename("FastTrackingEval.root");
+  se->registerSubsystem(fast_sim_eval);
+  //---------------------------
+
+  //---------------------------
+  // fast pattern recognition and full Kalman filter
+  // output evaluation file for truth track and reco tracks are PHG4TruthInfoContainer
+  //---------------------------
+  kalman = new PHG4TrackFastSim("PHG4TrackFastSim_truth");
+  kalman->Verbosity(Fun4AllServer::VERBOSITY_MAX);
+  kalman->set_use_vertex_in_fitting(false);
+  //kalman->set_sub_top_node_name("SVTX");
+  //kalman->set_trackmap_out_name("SvtxTrackMap");
+  kalman->set_sub_top_node_name("BMT");
+  kalman->set_trackmap_out_name("BMTTruthTrackMap");
+  //kalman->set_do_evt_display(true);
+
+  //  add Si Trtacker
+  //kalman->add_phg4hits(
+  //    "G4HIT_SVTX",                //      const std::string& phg4hitsNames,
+  //    PHG4TrackFastSim::Cylinder,  //      const DETECTOR_TYPE phg4dettype,
+  //    300e-4,                      //       radial-resolution [cm]
+  //    300e-4,                       //        azimuthal-resolution [cm]
+  //    1,                           //      z-resolution [cm]
+  //    1,                           //      efficiency,
+  //    0                            //      noise hits
+  //);
+  kalman->add_phg4hits(
+      "G4HIT_BMT",                //      const std::string& phg4hitsNames,
+      PHG4TrackFastSim::Cylinder,  //      const DETECTOR_TYPE phg4dettype,
+      2.5/2/sqrt(12),                      //       radial-resolution [cm], only used for Vertical Plane Detector Type
+      150e-4,                       //        azimuthal-resolution [cm]
+      150e-4,                           //      z-resolution [cm]
+      1,                           //      efficiency,
+      0                            //      noise hits
+  );
+  se->registerSubsystem(kalman);
+
+  fast_sim_eval = new PHG4TrackFastSimEval("FastTrackingEval_truth",
+      "FastTrackingEval_BMT_truth.root",
+      "BMTTruthTrackMap"
       );
   //fast_sim_eval->set_filename("FastTrackingEval.root");
   se->registerSubsystem(fast_sim_eval);

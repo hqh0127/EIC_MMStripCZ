@@ -173,6 +173,8 @@ bool PHG4CylinderStripSteppingAction::UserSteppingAction(const G4Step* aStep, bo
       m_Hit->set_t(0, prePoint->GetGlobalTime() / nanosecond);
       //set and save the track ID
       m_Hit->set_trkid(aTrack->GetTrackID());
+      if (m_Detector->IsInTileC(volume)) m_Hit->set_hit_type(1);
+      if (m_Detector->IsInTileZ(volume)) m_Hit->set_hit_type(2);
       m_SaveTrackId = aTrack->GetTrackID();
       //set the initial energy deposit
       m_Hit->set_edep(0);
