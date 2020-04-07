@@ -157,6 +157,21 @@ void PHG4CylinderStripDetector::ConstructMe(G4LogicalVolume *logicWorld)
   media[ DriftCuElectrode] = G4Material::GetMaterial("myCopper"           );
   media[ DriftKapton     ] = G4Material::GetMaterial("myKapton"           );
   media[ DriftCuGround   ] = G4Material::GetMaterial("myCopper"           );
+  
+  // color
+  map<int, G4Colour> color;
+  color[ coverlay        ] = G4Colour(204/255., 153/255., 0);
+  color[ CuGround        ] = G4Colour::Brown();
+  color[ PCB             ] = G4Colour::Green();
+  color[ CuStrips        ] = G4Colour::Brown();
+  color[ KaptonStrips    ] = G4Colour::Brown();
+  color[ ResistiveStrips ] = G4Colour::Black();
+  color[ Gas1            ] = G4Colour::Grey();
+  color[ Mesh            ] = G4Colour::White();
+  color[ Gas2            ] = G4Colour::Grey();
+  color[ DriftCuElectrode] = G4Colour::Brown();
+  color[ DriftKapton     ] = G4Colour::Brown();
+  color[ DriftCuGround   ] = G4Colour(51/255., 26/255., 0);
 
   // determine length of cylinder using PHENIX's rapidity coverage if flag is true
   double radius = m_Params->get_double_param("radius") * cm;
@@ -253,7 +268,7 @@ void PHG4CylinderStripDetector::ConstructMe(G4LogicalVolume *logicWorld)
                                             nullptr,
                                             g4userlimits
                                            );
-    vis = new G4VisAttributes(G4Color(G4Colour::Grey())); // grey is good to see the tracks in the display
+    vis = new G4VisAttributes(G4Color(color[ic])); // grey is good to see the tracks in the display
     vis->SetForceSolid(true);
     vis->SetVisibility(true);
     tile_o_comp_logic->SetVisAttributes(vis);
@@ -267,7 +282,7 @@ void PHG4CylinderStripDetector::ConstructMe(G4LogicalVolume *logicWorld)
     Rm = RM;
   }
   
-  cout << "Rm=" << Rm << " RM=" << RM << endl;
+  //cout << "Rm=" << Rm << " RM=" << RM << endl;
   Rm += gap;
   RM += gap;
   for( int ic = 0; ic < kNcomponents; ic++ ){
@@ -287,6 +302,9 @@ void PHG4CylinderStripDetector::ConstructMe(G4LogicalVolume *logicWorld)
                                             nullptr,
                                             g4userlimits
                                            );
+    vis = new G4VisAttributes(G4Color(color[ic])); // grey is good to see the tracks in the display
+    vis->SetForceSolid(true);
+    vis->SetVisibility(true);
     tile_o_comp_logic->SetVisAttributes(vis);
     G4VPhysicalVolume* phys = new G4PVPlacement(0, G4ThreeVector(0,0,0),
                                                 tile_o_comp_logic,

@@ -17,6 +17,7 @@
 #include <phool/PHObject.h>              // for PHObject
 #include <phool/getClass.h>
 #include <TSystem.h>
+#include <TMath.h>
 
 #include <sstream>
 #include <utility>                        // for pair
@@ -113,11 +114,16 @@ PHG4Hit* CreateCZHitContainer::merge_hits(PHG4Hit* h1, PHG4Hit* h2){
   if (!(h1->get_eion() > 0 && h2->get_eion() > 0)) return nullptr;
   PHG4Hit* merged = new PHG4Hitv1();
   merged->set_layer(h1->get_layer());
-  merged->set_x(0, h2->get_x(0));
-  merged->set_y(0, h2->get_y(0));
+
+  float R_in = TMath::Sqrt(h1->get_x(0)*h1->get_x(0) + h1->get_y(0)*h1->get_y(0));
+  float R_out = TMath::Sqrt(h2->get_x(1)*h2->get_x(1) + h2->get_y(1)*h2->get_y(1));
+  float phi_measured = TMath::ATan2(h2->get_avg_y(), h2->get_avg_x());
+
+  merged->set_x(0, R_in * TMath::Cos(phi_measured));
+  merged->set_y(0, R_in * TMath::Sin(phi_measured));
   merged->set_z(0, h1->get_z(0));
-  merged->set_x(1, h2->get_x(1));
-  merged->set_y(1, h2->get_y(1));
+  merged->set_x(1, R_out * TMath::Cos(phi_measured));
+  merged->set_y(1, R_out * TMath::Sin(phi_measured));
   merged->set_z(1, h1->get_z(1));
   float t0 = h1->get_t(0);
   if (h2->get_t(0) < t0) t0=h2->get_t(0);

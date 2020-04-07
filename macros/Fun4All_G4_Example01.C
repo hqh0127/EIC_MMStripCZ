@@ -63,7 +63,7 @@ void Fun4All_G4_Example01(int nEvents = 1)
   // the PHG4ParticleGenerator makes cones using phi and eta
   if (particle) {
     PHG4ParticleGenerator *gen = new PHG4ParticleGenerator("PGENERATOR");
-    gen->set_name("e-");
+    gen->set_name("e+");
     gen->set_vtx(0, 0, 0);
     gen->set_eta_range(-0.95, 0.95);
     gen->set_mom_range(10.0, 10.0);
@@ -168,11 +168,11 @@ void Fun4All_G4_Example01(int nEvents = 1)
   CreateCZHitContainer* cz = new CreateCZHitContainer("BMT");
   se->registerSubsystem(cz);
 
-  G4HitNtuple *hits = new G4HitNtuple("Hits");
-  hits->AddNode("SVTX",0);
-  hits->AddNode("BMT",1);
-  hits->AddNode("CZBMT", 2);
-  se->registerSubsystem(hits);
+  //G4HitNtuple *hits = new G4HitNtuple("Hits");
+  //hits->AddNode("SVTX",0);
+  //hits->AddNode("BMT",1);
+  //hits->AddNode("CZBMT", 2);
+  //se->registerSubsystem(hits);
   
   //---------------------------
   // fast pattern recognition and full Kalman filter
@@ -188,15 +188,15 @@ void Fun4All_G4_Example01(int nEvents = 1)
   //kalman->set_do_evt_display(true);
 
   //  add Si Trtacker
-  //kalman->add_phg4hits(
-  //    "G4HIT_SVTX",                //      const std::string& phg4hitsNames,
-  //    PHG4TrackFastSim::Cylinder,  //      const DETECTOR_TYPE phg4dettype,
-  //    300e-4,                      //       radial-resolution [cm]
-  //    300e-4,                       //        azimuthal-resolution [cm]
-  //    1,                           //      z-resolution [cm]
-  //    1,                           //      efficiency,
-  //    0                            //      noise hits
-  //);
+  kalman->add_phg4hits(
+      "G4HIT_SVTX",                //      const std::string& phg4hitsNames,
+      PHG4TrackFastSim::Cylinder,  //      const DETECTOR_TYPE phg4dettype,
+      300e-4,                      //       radial-resolution [cm]
+      300e-4,                       //        azimuthal-resolution [cm]
+      300e-4,                           //      z-resolution [cm]
+      1,                           //      efficiency,
+      0                            //      noise hits
+  );
   kalman->add_phg4hits(
       "G4HIT_CZBMT",                //      const std::string& phg4hitsNames,
       PHG4TrackFastSim::Cylinder,  //      const DETECTOR_TYPE phg4dettype,
@@ -216,12 +216,13 @@ void Fun4All_G4_Example01(int nEvents = 1)
   se->registerSubsystem(fast_sim_eval);
   //---------------------------
 
+  /* //kalman filter for true hits
   //---------------------------
   // fast pattern recognition and full Kalman filter
   // output evaluation file for truth track and reco tracks are PHG4TruthInfoContainer
   //---------------------------
   kalman = new PHG4TrackFastSim("PHG4TrackFastSim_truth");
-  //kalman->Verbosity(Fun4AllServer::VERBOSITY_MAX);
+  kalman->Verbosity(Fun4AllServer::VERBOSITY_MAX);
   kalman->set_use_vertex_in_fitting(false);
   //kalman->set_sub_top_node_name("SVTX");
   //kalman->set_trackmap_out_name("SvtxTrackMap");
@@ -257,6 +258,7 @@ void Fun4All_G4_Example01(int nEvents = 1)
   //fast_sim_eval->set_filename("FastTrackingEval.root");
   se->registerSubsystem(fast_sim_eval);
   //---------------------------
+  */
 
   ///////////////////////////////////////////
   // IOManagers...
