@@ -106,7 +106,7 @@ void Fun4All_G4_Example01(int nEvents = 1)
   for (int ilayer = 0; ilayer< 6; ilayer++){
     example01 = new PHG4CylinderStripSubsystem("BMT",ilayer);
     example01->set_double_param("radius", BMT_r[ilayer]);
-    example01->set_string_param("material", "G4_Ar");
+    example01->set_string_param("gas", "myMMGas");
     example01->set_double_param("thickness", 0.5);
     example01->set_double_param("steplimits", 300e-4);
     example01->set_double_param("gap", 1.5);

@@ -137,7 +137,7 @@ void PHG4CylinderStripSubsystem::SetDefaultParameters()
   set_default_int_param("lightyield", 0);
   set_default_int_param("use_g4steps", 0);
 
-  set_default_string_param("material", "G4_Ar");
+  set_default_string_param("gas", "G4_Ar");
 }
 
 PHG4Detector *
