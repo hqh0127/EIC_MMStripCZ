@@ -28,7 +28,7 @@ class PHG4CylinderStripDetector : public PHG4Detector
   //! construct
   void ConstructMe(G4LogicalVolume *world);
 
-  bool IsInDetector(G4VPhysicalVolume *) const;
+  //bool IsInDetector(G4VPhysicalVolume *) const;
   bool IsInTileC(G4VPhysicalVolume *) const;
   bool IsInTileZ(G4VPhysicalVolume *) const;
   void SuperDetector(const std::string &name) { m_SuperDetector = name; }
@@ -40,10 +40,10 @@ class PHG4CylinderStripDetector : public PHG4Detector
   PHParameters *m_Params;
 
   G4VPhysicalVolume *m_CylinderPhysicalVolume;
-  G4VPhysicalVolume *m_CylinderCPhysicalVolume;
-  G4VPhysicalVolume *m_CylinderZPhysicalVolume;
+  std::set<G4VPhysicalVolume*> m_CylinderCPhysicalVolume;
+  std::set<G4VPhysicalVolume*> m_CylinderZPhysicalVolume;
   
-  std::set<G4VPhysicalVolume*> m_PhysicalVolumesSet;
+  //std::set<G4VPhysicalVolume*> m_PhysicalVolumesSet;
 
   int m_Layer;
   std::string m_SuperDetector;

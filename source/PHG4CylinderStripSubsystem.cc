@@ -129,7 +129,9 @@ void PHG4CylinderStripSubsystem::SetDefaultParameters()
   set_default_double_param("radius", 100);
   set_default_double_param("steplimits", NAN);
   set_default_double_param("gap", 20);
-  set_default_double_param("thickness", 100);
+  set_default_double_param("gas1thickness", 0.0020000);
+  set_default_double_param("gas2thickness", 0.3000000);
+  set_default_double_param("phi0", 0.);
   set_default_double_param("tmin", NAN);
   set_default_double_param("tmax", NAN);
 

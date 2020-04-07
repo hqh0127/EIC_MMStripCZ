@@ -89,7 +89,7 @@ bool PHG4CylinderStripSteppingAction::UserSteppingAction(const G4Step* aStep, bo
   G4VPhysicalVolume* volume = touch->GetVolume();
   // G4 just calls  UserSteppingAction for every step (and we loop then over all our
   // steppingactions. First we have to check if we are actually in our volume
-  if (!m_Detector->IsInDetector(volume))
+  if ((!m_Detector->IsInTileC(volume)) && (!m_Detector->IsInTileZ(volume)))
   {
     return false;
   }

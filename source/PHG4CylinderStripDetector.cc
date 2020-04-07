@@ -20,10 +20,12 @@
 #include <Geant4/G4Material.hh>
 
 #include <TSystem.h>
+#include <TMath.h>
 
 #include <cmath>
 #include <iostream>  // for operator<<, endl, basic_ost...
 #include <sstream>
+#include <map>
 
 class G4VSolid;
 class PHCompositeNode;
@@ -40,23 +42,25 @@ PHG4CylinderStripDetector::PHG4CylinderStripDetector(PHG4Subsystem *subsys, PHCo
 }
 
 //_______________________________________________________________
-bool PHG4CylinderStripDetector::IsInDetector(G4VPhysicalVolume *volume) const
-{
-  set<G4VPhysicalVolume *>::const_iterator iter =
-      m_PhysicalVolumesSet.find(volume);
-  if (iter != m_PhysicalVolumesSet.end())
-  {
-    return true;
-  }
-
-  return false;
-}
+//bool PHG4CylinderStripDetector::IsInDetector(G4VPhysicalVolume *volume) const
+//{
+//  set<G4VPhysicalVolume *>::const_iterator iter =
+//      m_PhysicalVolumesSet.find(volume);
+//  if (iter != m_PhysicalVolumesSet.end())
+//  {
+//    return true;
+//  }
+//
+//  return false;
+//}
 
 //_______________________________________________________________
 
 bool PHG4CylinderStripDetector::IsInTileC(G4VPhysicalVolume *volume) const
 {
-  if (volume == m_CylinderCPhysicalVolume)
+  set<G4VPhysicalVolume *>::const_iterator iter =
+      m_CylinderCPhysicalVolume.find(volume);
+  if (iter != m_CylinderCPhysicalVolume.end())
   {
     return true;
   }
@@ -68,7 +72,9 @@ bool PHG4CylinderStripDetector::IsInTileC(G4VPhysicalVolume *volume) const
 
 bool PHG4CylinderStripDetector::IsInTileZ(G4VPhysicalVolume *volume) const
 {
-  if (volume == m_CylinderZPhysicalVolume)
+  set<G4VPhysicalVolume *>::const_iterator iter =
+      m_CylinderZPhysicalVolume.find(volume);
+  if (iter != m_CylinderZPhysicalVolume.end())
   {
     return true;
   }
@@ -87,23 +93,129 @@ void PHG4CylinderStripDetector::ConstructMe(G4LogicalVolume *logicWorld)
     std::cout << "Error: Can not set Micromegas Gas" << std::endl;
     gSystem->Exit(1);
   }
+  
+  // components
+  enum components {
+    coverlay,       
+    CuGround,       
+    PCB     ,       
+    CuStrips,       
+    KaptonStrips,   
+    ResistiveStrips,
+    Gas1         ,
+    Mesh         ,
+    Gas2         ,
+    DriftCuElectrode,       
+    DriftKapton,   
+    DriftCuGround,
+    kNcomponents
+  };
+  // component names
+  G4String names[] = {
+    "coverlay",       
+    "CuGround",       
+    "PCB"     ,       
+    "CuStrips",       
+    "KaptonStrips",   
+    "ResistiveStrips",
+    "Gas1"         ,
+    "Mesh"         ,
+    "Gas2"         ,
+    "DriftCuElectrode",
+    "DriftKapton",
+    "DriftCuGround"
+  };
+
+  // thicknesses
+  map<int,float> thick;
+  thick[ coverlay        ] = 0.0050000 * cm;
+  thick[ CuGround        ] = 0.0001580 * cm;
+  thick[ PCB             ] = 0.0100000 * cm;
+  thick[ CuStrips        ] = 0.0012000 * cm;
+  thick[ KaptonStrips    ] = 0.0075000 * cm;
+  thick[ ResistiveStrips ] = 0.0020000 * cm;
+  //thick[ Gas1            ] = 0.0020000 * cm;
+  thick[ Gas1            ] = m_Params->get_double_param("gas1thickness") * cm;
+  thick[ Mesh            ] = 0.0018000 * cm;
+  //thick[ Gas2            ] = 0.3000000 * cm;
+  thick[ Gas2            ] = m_Params->get_double_param("gas2thickness") * cm;
+  thick[ DriftCuElectrode] = 0.0005000 * cm;
+  thick[ DriftKapton     ] = 0.0250000 * cm;
+  thick[ DriftCuGround   ] = 0.0000410 * cm;
+
+  // media
+  map<int,G4Material*> media;
+  media[ coverlay        ] = G4Material::GetMaterial("myKapton"           );
+  media[ CuGround        ] = G4Material::GetMaterial("myCopper"           );
+  media[ PCB             ] = G4Material::GetMaterial("myFR4"              );
+  media[ CuStrips        ] = G4Material::GetMaterial("myMMStrips"         );
+  media[ KaptonStrips    ] = G4Material::GetMaterial("myKapton"           );
+  media[ ResistiveStrips ] = G4Material::GetMaterial("myMMResistivePaste" );
+  media[ Gas1            ] = TrackerMaterial;
+  media[ Mesh            ] = G4Material::GetMaterial("myMMMesh"           );
+  media[ Gas2            ] = TrackerMaterial;
+  media[ DriftCuElectrode] = G4Material::GetMaterial("myCopper"           );
+  media[ DriftKapton     ] = G4Material::GetMaterial("myKapton"           );
+  media[ DriftCuGround   ] = G4Material::GetMaterial("myCopper"           );
 
   // determine length of cylinder using PHENIX's rapidity coverage if flag is true
   double radius = m_Params->get_double_param("radius") * cm;
-  double thickness = m_Params->get_double_param("thickness") * cm;
+  double thickness = 0;
+  for (map<int, float>::iterator iter = thick.begin(); iter != thick.end(); ++iter)
+  {
+    thickness += iter->second;
+  }
+  cout << "The tile thickness is " << thickness/mm << " mm" << endl;
+  
   double gap = m_Params->get_double_param("gap") * cm;
+  
+  // make a "sub-world": a tube that contains all the tiles of this layer
+  // --------------------------------------------------------------------
+
+  // max thickness (cm)
   G4VSolid *cylinder_solid = new G4Tubs(G4String(GetName()),
                                         radius,
-                                        radius + thickness*2 + gap,
+                                        radius + thickness*2 + gap + 0.001*mm,
                                         m_Params->get_double_param("length") * cm / 2., 0, twopi);
-  G4VSolid *cylinder_solid_C = new G4Tubs(G4String(GetName()),
-                                        radius,
-                                        radius + thickness,
-                                        m_Params->get_double_param("length") * cm / 2., 0, twopi);
-  G4VSolid *cylinder_solid_Z = new G4Tubs(G4String(GetName()),
-                                        radius + thickness + gap,
-                                        radius + thickness*2 + gap,
-                                        m_Params->get_double_param("length") * cm / 2., 0, twopi);
+  G4LogicalVolume *cylinder_logic = new G4LogicalVolume(cylinder_solid,
+                                                        G4Material::GetMaterial("myAir"),
+                                                        G4String(GetName())
+                                                        );
+  G4VisAttributes *vis = new G4VisAttributes(G4Color(G4Colour::Grey())); // grey is good to see the tracks in the display
+  vis->SetForceSolid(true);
+  vis->SetVisibility(false);
+  cylinder_logic->SetVisAttributes(vis);
+  
+  // add mother logical volume to subsystem
+  PHG4Subsystem *mysys = GetMySubsystem();
+  mysys->SetLogicalVolume(cylinder_logic);
+
+
+  // compute how many tiles
+  // ----------------------
+ 
+  float maxTileWidth = 50.*cm;  // cm
+  float spacer = 2.*cm ;       // cm, mechanical space between tiles, to be filled with carbon fiber 
+
+  float circumference = twopi * radius;
+  int Ntiles = ceil( circumference / maxTileWidth );
+  int NtilesTest = ceil( ( circumference - (Ntiles-1)*spacer )/ maxTileWidth );
+
+  if( Ntiles != NtilesTest ){
+    //cout << " ATTENTION!!! there is not enough space for mecha  " << Ntiles << " " << NtilesTest<< endl;
+    Ntiles = NtilesTest;
+  }
+  
+  float tileW = ( circumference - (Ntiles-1)*spacer )/Ntiles;
+
+  cout << setw(10) << radius << setw(10) << "Ntiles: " << Ntiles << setw(20) << "tileW: " << tileW<<endl;
+
+
+
+  // make 1 tile
+  // -----------
+
+  float deltaPhi = tileW/radius * TMath::RadToDeg();
   double steplimits = m_Params->get_double_param("steplimits") * cm;
   G4UserLimits *g4userlimits = nullptr;
   if (isfinite(steplimits))
@@ -111,41 +223,133 @@ void PHG4CylinderStripDetector::ConstructMe(G4LogicalVolume *logicWorld)
     g4userlimits = new G4UserLimits(steplimits);
   }
 
-  G4LogicalVolume *cylinder_logic = new G4LogicalVolume(cylinder_solid,
-                                                        G4Material::GetMaterial("myAir"),
-                                                        G4String(GetName())
-                                                        );
-  G4LogicalVolume *cylinder_logic_C = new G4LogicalVolume(cylinder_solid_C,
-                                                        TrackerMaterial,
-                                                        G4String(GetName())+"CTileLogic",
-                                                        nullptr, nullptr, g4userlimits);
-  G4LogicalVolume *cylinder_logic_Z = new G4LogicalVolume(cylinder_solid_Z,
-                                                        TrackerMaterial,
-                                                        G4String(GetName())+"ZTileLogic",
-                                                        nullptr, nullptr, g4userlimits);
-  G4VisAttributes *vis = new G4VisAttributes(G4Color(G4Colour::Grey())); // grey is good to see the tracks in the display
-  vis->SetForceSolid(true);
-  cylinder_logic_C->SetVisAttributes(vis);
-  cylinder_logic_Z->SetVisAttributes(vis);
+  G4VSolid *tile_o = new G4Tubs(G4String(GetName())+"_tile",
+                                radius,
+                                radius + thickness*2 + gap + 0.001*mm,
+                                m_Params->get_double_param("length") * cm / 2., 0, deltaPhi*deg);
+  G4LogicalVolume *tile_o_logic = new G4LogicalVolume(tile_o,
+                                                      G4Material::GetMaterial("myAir"),
+                                                      G4String(GetName())+"_tile_logic"
+                                                     );
+  tile_o_logic->SetVisAttributes(vis);
+  float Rm = radius;
+  float RM = radius;
+  G4VSolid* tile_o_comp = nullptr;
+  G4LogicalVolume* tile_o_comp_logic = nullptr;
+  for( int ic = 0; ic < kNcomponents; ic++ ){
   
-  vis = new G4VisAttributes(G4Color(G4Colour::Grey())); // grey is good to see the tracks in the display
-  vis->SetForceSolid(true);
-  vis->SetVisibility(false);
-  cylinder_logic->SetVisAttributes(vis);
+    G4String cname = G4String(GetName())+"_tileC" + "_" + names[ic];
+    
+    RM = Rm + thick[ic];
 
-  PHG4Subsystem *mysys = GetMySubsystem();
-  mysys->SetLogicalVolume(cylinder_logic);
-  m_CylinderCPhysicalVolume = new G4PVPlacement(0, G4ThreeVector(0,0,0),
-                                               cylinder_logic_C,
-                                               G4String(GetName())+"CTilePhys",
-                                               cylinder_logic, 0, false, OverlapCheck());
-  m_PhysicalVolumesSet.insert(m_CylinderCPhysicalVolume);
-  m_CylinderZPhysicalVolume = new G4PVPlacement(0, G4ThreeVector(0,0,0),
-                                               cylinder_logic_Z,
-                                               G4String(GetName())+"ZTilePhys",
-                                               cylinder_logic, 0, false, OverlapCheck());
-  m_PhysicalVolumesSet.insert(m_CylinderZPhysicalVolume);
-  m_CylinderPhysicalVolume = new G4PVPlacement(0, G4ThreeVector(m_Params->get_double_param("place_x") * cm, m_Params->get_double_param("place_y") * cm, m_Params->get_double_param("place_z") * cm),
+    tile_o_comp = new G4Tubs(cname+"_solid",
+                             Rm,
+                             RM,
+                             m_Params->get_double_param("length") * cm / 2., 0, deltaPhi*deg);
+    tile_o_comp_logic = new G4LogicalVolume(tile_o_comp,
+                                            media[ic],
+                                            cname+"_logic",
+                                            nullptr,
+                                            nullptr,
+                                            g4userlimits
+                                           );
+    vis = new G4VisAttributes(G4Color(G4Colour::Grey())); // grey is good to see the tracks in the display
+    vis->SetForceSolid(true);
+    vis->SetVisibility(true);
+    tile_o_comp_logic->SetVisAttributes(vis);
+    G4VPhysicalVolume* phys = new G4PVPlacement(0, G4ThreeVector(0,0,0),
+                                                tile_o_comp_logic,
+                                                cname+"_phys",
+                                                tile_o_logic, false, 0, OverlapCheck());
+    //if (ic==Gas1 || ic==Gas2)
+    if (ic==Gas2)
+	  m_CylinderCPhysicalVolume.insert(phys);
+    Rm = RM;
+  }
+  
+  cout << "Rm=" << Rm << " RM=" << RM << endl;
+  Rm += gap;
+  RM += gap;
+  for( int ic = 0; ic < kNcomponents; ic++ ){
+  
+    G4String cname = G4String(GetName())+"_tileZ" + "_" + names[ic];
+    
+    RM = Rm + thick[ic];
+
+    tile_o_comp = new G4Tubs(cname+"_solid",
+                             Rm,
+                             RM,
+                             m_Params->get_double_param("length") * cm / 2., 0, deltaPhi*deg);
+    tile_o_comp_logic = new G4LogicalVolume(tile_o_comp,
+                                            media[ic],
+                                            cname+"_logic",
+                                            nullptr,
+                                            nullptr,
+                                            g4userlimits
+                                           );
+    tile_o_comp_logic->SetVisAttributes(vis);
+    G4VPhysicalVolume* phys = new G4PVPlacement(0, G4ThreeVector(0,0,0),
+                                                tile_o_comp_logic,
+                                                cname+"_phys",
+                                                tile_o_logic, false, 0, OverlapCheck());
+    //if (ic==Gas1 || ic==Gas2)
+    if (ic==Gas2)
+	  m_CylinderZPhysicalVolume.insert(phys);
+    Rm = RM;
+  }
+  
+  double phi0 = m_Params->get_double_param("phi0") * deg;
+
+  // repeate N tiles 
+  for( int i=0; i<Ntiles; i++ ){
+    G4RotationMatrix* yRot = new G4RotationMatrix;
+    yRot->rotateZ(i*360./Ntiles*deg);
+    new G4PVPlacement(G4Transform3D(*yRot, G4ThreeVector(0,0,0)),
+		              tile_o_logic,
+		              G4String(GetName())+"_tile_phys",
+		              cylinder_logic,
+		              true,
+		              i,
+		              OverlapCheck()
+		             );
+  }
+
+  //G4VSolid *cylinder_solid_C = new G4Tubs(G4String(GetName())+"_C",
+  //                                      radius,
+  //                                      radius + thickness,
+  //                                      m_Params->get_double_param("length") * cm / 2., 0, twopi);
+  //G4VSolid *cylinder_solid_Z = new G4Tubs(G4String(GetName())+"_Z",
+  //                                      radius + thickness + gap,
+  //                                      radius + thickness*2 + gap,
+  //                                      m_Params->get_double_param("length") * cm / 2., 0, twopi);
+
+  //G4LogicalVolume *cylinder_logic_C = new G4LogicalVolume(cylinder_solid_C,
+  //                                                      TrackerMaterial,
+  //                                                      G4String(GetName())+"CTileLogic",
+  //                                                      nullptr, nullptr, g4userlimits);
+  //G4LogicalVolume *cylinder_logic_Z = new G4LogicalVolume(cylinder_solid_Z,
+  //                                                      TrackerMaterial,
+  //                                                      G4String(GetName())+"ZTileLogic",
+  //                                                      nullptr, nullptr, g4userlimits);
+  //vis = new G4VisAttributes(G4Color(G4Colour::Grey())); // grey is good to see the tracks in the display
+  //vis->SetForceSolid(true);
+  //cylinder_logic_C->SetVisAttributes(vis);
+  //cylinder_logic_Z->SetVisAttributes(vis);
+  
+
+  //m_CylinderCPhysicalVolume = new G4PVPlacement(0, G4ThreeVector(0,0,0),
+  //                                             cylinder_logic_C,
+  //                                             G4String(GetName())+"CTilePhys",
+  //                                             cylinder_logic, 0, false, OverlapCheck());
+  //m_PhysicalVolumesSet.insert(m_CylinderCPhysicalVolume);
+  //m_CylinderZPhysicalVolume = new G4PVPlacement(0, G4ThreeVector(0,0,0),
+  //                                             cylinder_logic_Z,
+  //                                             G4String(GetName())+"ZTilePhys",
+  //                                             cylinder_logic, 0, false, OverlapCheck());
+  //m_PhysicalVolumesSet.insert(m_CylinderZPhysicalVolume);
+  G4RotationMatrix* yRot0 = new G4RotationMatrix;
+  yRot0->rotateZ(phi0);
+  m_CylinderPhysicalVolume = new G4PVPlacement(G4Transform3D(*yRot0, G4ThreeVector(m_Params->get_double_param("place_x") * cm, m_Params->get_double_param("place_y") * cm, m_Params->get_double_param("place_z") * cm)),
                                                cylinder_logic,
                                                G4String(GetName()),
                                                logicWorld, 0, false, OverlapCheck());

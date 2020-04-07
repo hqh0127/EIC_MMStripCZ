@@ -107,13 +107,15 @@ void Fun4All_G4_Example01(int nEvents = 1)
     example01 = new PHG4CylinderStripSubsystem("BMT",ilayer);
     example01->set_double_param("radius", BMT_r[ilayer]);
     example01->set_string_param("gas", "myMMGas");
-    example01->set_double_param("thickness", 0.5);
+    //example01->set_double_param("thickness", 0.5);
     example01->set_double_param("steplimits", 300e-4);
+    example01->set_double_param("phi0", 15*ilayer);
     example01->set_double_param("gap", 1.5);
     example01->SetActive();
     example01->SuperDetector("BMT");
     example01->set_int_param("lengthviarapidity",0);
     example01->set_double_param("length", bmt_length);
+    example01->OverlapCheck(true);
     g4Reco->registerSubsystem(example01);
     //example01->Print();
   }
@@ -162,21 +164,22 @@ void Fun4All_G4_Example01(int nEvents = 1)
   ///////////////////////////////////////////
   // Fun4All modules
   ///////////////////////////////////////////
+  
+  CreateCZHitContainer* cz = new CreateCZHitContainer("BMT");
+  se->registerSubsystem(cz);
 
   G4HitNtuple *hits = new G4HitNtuple("Hits");
   hits->AddNode("SVTX",0);
   hits->AddNode("BMT",1);
+  hits->AddNode("CZBMT", 2);
   se->registerSubsystem(hits);
-  
-  CreateCZHitContainer* cz = new CreateCZHitContainer("BMT");
-  se->registerSubsystem(cz);
   
   //---------------------------
   // fast pattern recognition and full Kalman filter
   // output evaluation file for truth track and reco tracks are PHG4TruthInfoContainer
   //---------------------------
   PHG4TrackFastSim *kalman = new PHG4TrackFastSim("PHG4TrackFastSim");
-  kalman->Verbosity(Fun4AllServer::VERBOSITY_MAX);
+  //kalman->Verbosity(Fun4AllServer::VERBOSITY_MAX);
   kalman->set_use_vertex_in_fitting(false);
   //kalman->set_sub_top_node_name("SVTX");
   //kalman->set_trackmap_out_name("SvtxTrackMap");
@@ -195,7 +198,7 @@ void Fun4All_G4_Example01(int nEvents = 1)
   //    0                            //      noise hits
   //);
   kalman->add_phg4hits(
-      "G4HITCZ_BMT",                //      const std::string& phg4hitsNames,
+      "G4HIT_CZBMT",                //      const std::string& phg4hitsNames,
       PHG4TrackFastSim::Cylinder,  //      const DETECTOR_TYPE phg4dettype,
       2.5/2/sqrt(12),                      //       radial-resolution [cm], only used for Vertical Plane Detector Type
       150e-4,                       //        azimuthal-resolution [cm]
@@ -218,7 +221,7 @@ void Fun4All_G4_Example01(int nEvents = 1)
   // output evaluation file for truth track and reco tracks are PHG4TruthInfoContainer
   //---------------------------
   kalman = new PHG4TrackFastSim("PHG4TrackFastSim_truth");
-  kalman->Verbosity(Fun4AllServer::VERBOSITY_MAX);
+  //kalman->Verbosity(Fun4AllServer::VERBOSITY_MAX);
   kalman->set_use_vertex_in_fitting(false);
   //kalman->set_sub_top_node_name("SVTX");
   //kalman->set_trackmap_out_name("SvtxTrackMap");
