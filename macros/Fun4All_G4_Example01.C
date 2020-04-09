@@ -107,6 +107,7 @@ void Fun4All_G4_Example01(int nEvents = 1)
     gap_betweenCZ = 0;
     nCZlayer = 1;
   }
+  //Gap_betweenlayer = (60-nCZlayer*thickness-gap_betweenCZ)/5.-(nCZlayer*thickness + gap_betweenCZ);
 
   //double BMT_r[6] = {15., 19., 44.25, 48.25, 73.5, 77.5}; // for CZ strip readout
   double BMT_r[6] = {20., 20.+nCZlayer*thickness+gap_betweenCZ+Gap_betweenlayer, 50-nCZlayer*thickness-gap_betweenCZ-Gap_betweenlayer/2, 50+Gap_betweenlayer/2, 80-(nCZlayer*thickness+gap_betweenCZ)*2-Gap_betweenlayer, 80-nCZlayer*thickness-gap_betweenCZ};
@@ -150,7 +151,7 @@ void Fun4All_G4_Example01(int nEvents = 1)
       cyl->set_int_param("lengthviarapidity",0);
       cyl->set_double_param("length", length[ilayer]);
     }
-    g4Reco->registerSubsystem(cyl);
+    //g4Reco->registerSubsystem(cyl);
   }
   // Black hole swallows everything - prevent loopers from returning
   // to inner detectors
@@ -159,7 +160,7 @@ void Fun4All_G4_Example01(int nEvents = 1)
   cyl->set_double_param("thickness", 0.1); // does not matter (but > 0)
   cyl->SetActive();
   cyl->BlackHole(); // eats everything
-  g4Reco->registerSubsystem(cyl);
+  //g4Reco->registerSubsystem(cyl);
 
   // read-in HepMC events to Geant4 if there is any
   HepMCNodeReader *hr = new HepMCNodeReader();
