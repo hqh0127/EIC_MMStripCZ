@@ -138,6 +138,7 @@ void PHG4CylinderStripSubsystem::SetDefaultParameters()
   set_default_int_param("lengthviarapidity", 0);
   set_default_int_param("lightyield", 0);
   set_default_int_param("use_g4steps", 0);
+  set_default_int_param("use_2Dreadout", 0);
 
   set_default_string_param("gas", "G4_Ar");
 }

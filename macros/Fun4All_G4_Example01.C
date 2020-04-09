@@ -99,7 +99,17 @@ void Fun4All_G4_Example01(int nEvents = 1)
   // try non default physics lists
   //g4Reco->SetPhysicsList("FTFP_BERT_HP");
 
-  double BMT_r[6] = {15., 19., 44.25, 48.25, 73.5, 77.5};
+  double gap_betweenCZ = 1.5, Gap_betweenlayer = 1.5;
+  double thickness = 0.355199;
+  int nCZlayer = 2;
+  bool use_2Dreadout = true;
+  if (use_2Dreadout) {
+    gap_betweenCZ = 0;
+    nCZlayer = 1;
+  }
+
+  //double BMT_r[6] = {15., 19., 44.25, 48.25, 73.5, 77.5}; // for CZ strip readout
+  double BMT_r[6] = {20., 20.+nCZlayer*thickness+gap_betweenCZ+Gap_betweenlayer, 50-nCZlayer*thickness-gap_betweenCZ-Gap_betweenlayer/2, 50+Gap_betweenlayer/2, 80-(nCZlayer*thickness+gap_betweenCZ)*2-Gap_betweenlayer, 80-nCZlayer*thickness-gap_betweenCZ};
   PHG4CylinderStripSubsystem *example01;
   const double prapidity =1;
   double bmt_length = (1-exp(-2*prapidity))/exp(-prapidity)*80;
@@ -107,15 +117,15 @@ void Fun4All_G4_Example01(int nEvents = 1)
     example01 = new PHG4CylinderStripSubsystem("BMT",ilayer);
     example01->set_double_param("radius", BMT_r[ilayer]);
     example01->set_string_param("gas", "myMMGas");
-    //example01->set_double_param("thickness", 0.5);
-    example01->set_double_param("steplimits", 300e-4);
+    //example01->set_double_param("steplimits", 300e-4);
     example01->set_double_param("phi0", 15*ilayer);
-    example01->set_double_param("gap", 1.5);
+    example01->set_double_param("gap", gap_betweenCZ);
     example01->SetActive();
     example01->SuperDetector("BMT");
     example01->set_int_param("lengthviarapidity",0);
     example01->set_double_param("length", bmt_length);
     example01->OverlapCheck(true);
+    example01->set_int_param("use_2Dreadout",use_2Dreadout);
     g4Reco->registerSubsystem(example01);
     //example01->Print();
   }
@@ -127,7 +137,7 @@ void Fun4All_G4_Example01(int nEvents = 1)
   double length[6] = {40., 40., 40., 40., 40., 40.};  // -1 use eta coverage to determine length
   PHG4CylinderSubsystem *cyl;
   // here is our silicon:
-  for (int ilayer = 0; ilayer < 5; ilayer++)
+  for (int ilayer = 0; ilayer < 6; ilayer++)
   {
     cyl = new PHG4CylinderSubsystem("SVTX", ilayer);
     cyl->set_double_param("radius", svxrad[ilayer]);
@@ -168,11 +178,11 @@ void Fun4All_G4_Example01(int nEvents = 1)
   CreateCZHitContainer* cz = new CreateCZHitContainer("BMT");
   se->registerSubsystem(cz);
 
-  //G4HitNtuple *hits = new G4HitNtuple("Hits");
-  //hits->AddNode("SVTX",0);
-  //hits->AddNode("BMT",1);
-  //hits->AddNode("CZBMT", 2);
-  //se->registerSubsystem(hits);
+  G4HitNtuple *hits = new G4HitNtuple("Hits");
+  hits->AddNode("SVTX",0);
+  hits->AddNode("BMT",1);
+  hits->AddNode("CZBMT", 2);
+  se->registerSubsystem(hits);
   
   //---------------------------
   // fast pattern recognition and full Kalman filter
@@ -197,15 +207,28 @@ void Fun4All_G4_Example01(int nEvents = 1)
       1,                           //      efficiency,
       0                            //      noise hits
   );
-  kalman->add_phg4hits(
-      "G4HIT_CZBMT",                //      const std::string& phg4hitsNames,
-      PHG4TrackFastSim::Cylinder,  //      const DETECTOR_TYPE phg4dettype,
-      2.5/2/sqrt(12),                      //       radial-resolution [cm], only used for Vertical Plane Detector Type
-      150e-4,                       //        azimuthal-resolution [cm]
-      150e-4,                           //      z-resolution [cm]
-      1,                           //      efficiency,
-      0                            //      noise hits
-  );
+  if (use_2Dreadout) {
+    kalman->add_phg4hits(
+        "G4HIT_BMT",                //      const std::string& phg4hitsNames,
+        PHG4TrackFastSim::Cylinder,  //      const DETECTOR_TYPE phg4dettype,
+        2.5/2/sqrt(12),                      //       radial-resolution [cm], only used for Vertical Plane Detector Type
+        150e-4,                       //        azimuthal-resolution [cm]
+        150e-4,                           //      z-resolution [cm]
+        1,                           //      efficiency,
+        0                            //      noise hits
+    );
+  }
+  else {
+    kalman->add_phg4hits(
+        "G4HIT_CZBMT",                //      const std::string& phg4hitsNames,
+        PHG4TrackFastSim::Cylinder,  //      const DETECTOR_TYPE phg4dettype,
+        2.5/2/sqrt(12),                      //       radial-resolution [cm], only used for Vertical Plane Detector Type
+        150e-4,                       //        azimuthal-resolution [cm]
+        150e-4,                           //      z-resolution [cm]
+        1,                           //      efficiency,
+        0                            //      noise hits
+    );
+  }
   se->registerSubsystem(kalman);
 
   PHG4TrackFastSimEval *fast_sim_eval = new PHG4TrackFastSimEval("FastTrackingEval",
@@ -270,6 +293,7 @@ void Fun4All_G4_Example01(int nEvents = 1)
 
   // this (dummy) input manager just drives the event loop
   Fun4AllInputManager *in = new Fun4AllDummyInputManager( "Dummy");
+  in->Verbosity(1); // print out event number
   se->registerInputManager( in );
   // events = 0 => run forever
   if (nEvents <= 0)

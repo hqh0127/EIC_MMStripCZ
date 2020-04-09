@@ -176,6 +176,7 @@ void PHG4CylinderStripDetector::ConstructMe(G4LogicalVolume *logicWorld)
   // determine length of cylinder using PHENIX's rapidity coverage if flag is true
   double radius = m_Params->get_double_param("radius") * cm;
   double thickness = 0;
+  int nCZlayer = 2;
   for (map<int, float>::iterator iter = thick.begin(); iter != thick.end(); ++iter)
   {
     thickness += iter->second;
@@ -188,9 +189,15 @@ void PHG4CylinderStripDetector::ConstructMe(G4LogicalVolume *logicWorld)
   // --------------------------------------------------------------------
 
   // max thickness (cm)
+  
+  if (m_Params->get_int_param("use_2Dreadout")){
+    nCZlayer = 1;
+    gap = 0;
+  }
+
   G4VSolid *cylinder_solid = new G4Tubs(G4String(GetName()),
                                         radius,
-                                        radius + thickness*2 + gap + 0.001*mm,
+                                        radius + thickness* nCZlayer + gap + 0.001*mm,
                                         m_Params->get_double_param("length") * cm / 2., 0, twopi);
   G4LogicalVolume *cylinder_logic = new G4LogicalVolume(cylinder_solid,
                                                         G4Material::GetMaterial("myAir"),
@@ -240,7 +247,7 @@ void PHG4CylinderStripDetector::ConstructMe(G4LogicalVolume *logicWorld)
 
   G4VSolid *tile_o = new G4Tubs(G4String(GetName())+"_tile",
                                 radius,
-                                radius + thickness*2 + gap + 0.001*mm,
+                                radius + thickness * nCZlayer + gap + 0.001*mm,
                                 m_Params->get_double_param("length") * cm / 2., 0, deltaPhi*deg);
   G4LogicalVolume *tile_o_logic = new G4LogicalVolume(tile_o,
                                                       G4Material::GetMaterial("myAir"),
@@ -252,8 +259,11 @@ void PHG4CylinderStripDetector::ConstructMe(G4LogicalVolume *logicWorld)
   G4VSolid* tile_o_comp = nullptr;
   G4LogicalVolume* tile_o_comp_logic = nullptr;
   for( int ic = 0; ic < kNcomponents; ic++ ){
-  
-    G4String cname = G4String(GetName())+"_tileC" + "_" + names[ic];
+ 	G4UserLimits* g4userlimits_gas = nullptr; 
+	if (ic == Gas2)
+	  g4userlimits_gas = g4userlimits;
+
+	G4String cname = G4String(GetName())+"_tileC" + "_" + names[ic];
     
     RM = Rm + thick[ic];
 
@@ -266,7 +276,7 @@ void PHG4CylinderStripDetector::ConstructMe(G4LogicalVolume *logicWorld)
                                             cname+"_logic",
                                             nullptr,
                                             nullptr,
-                                            g4userlimits
+                                            g4userlimits_gas
                                            );
     vis = new G4VisAttributes(G4Color(color[ic])); // grey is good to see the tracks in the display
     vis->SetForceSolid(true);
@@ -276,44 +286,46 @@ void PHG4CylinderStripDetector::ConstructMe(G4LogicalVolume *logicWorld)
                                                 tile_o_comp_logic,
                                                 cname+"_phys",
                                                 tile_o_logic, false, 0, OverlapCheck());
-    //if (ic==Gas1 || ic==Gas2)
     if (ic==Gas2)
 	  m_CylinderCPhysicalVolume.insert(phys);
     Rm = RM;
   }
   
-  //cout << "Rm=" << Rm << " RM=" << RM << endl;
   Rm += gap;
   RM += gap;
-  for( int ic = 0; ic < kNcomponents; ic++ ){
-  
-    G4String cname = G4String(GetName())+"_tileZ" + "_" + names[ic];
+  if (nCZlayer == 2){
+    for( int ic = 0; ic < kNcomponents; ic++ ){
+      G4UserLimits* g4userlimits_gas = nullptr; 
+      if (ic == Gas2)
+        g4userlimits_gas = g4userlimits;
     
-    RM = Rm + thick[ic];
+      G4String cname = G4String(GetName())+"_tileZ" + "_" + names[ic];
+      
+      RM = Rm + thick[ic];
 
-    tile_o_comp = new G4Tubs(cname+"_solid",
-                             Rm,
-                             RM,
-                             m_Params->get_double_param("length") * cm / 2., 0, deltaPhi*deg);
-    tile_o_comp_logic = new G4LogicalVolume(tile_o_comp,
-                                            media[ic],
-                                            cname+"_logic",
-                                            nullptr,
-                                            nullptr,
-                                            g4userlimits
-                                           );
-    vis = new G4VisAttributes(G4Color(color[ic])); // grey is good to see the tracks in the display
-    vis->SetForceSolid(true);
-    vis->SetVisibility(true);
-    tile_o_comp_logic->SetVisAttributes(vis);
-    G4VPhysicalVolume* phys = new G4PVPlacement(0, G4ThreeVector(0,0,0),
-                                                tile_o_comp_logic,
-                                                cname+"_phys",
-                                                tile_o_logic, false, 0, OverlapCheck());
-    //if (ic==Gas1 || ic==Gas2)
-    if (ic==Gas2)
-	  m_CylinderZPhysicalVolume.insert(phys);
-    Rm = RM;
+      tile_o_comp = new G4Tubs(cname+"_solid",
+                               Rm,
+                               RM,
+                               m_Params->get_double_param("length") * cm / 2., 0, deltaPhi*deg);
+      tile_o_comp_logic = new G4LogicalVolume(tile_o_comp,
+                                              media[ic],
+                                              cname+"_logic",
+                                              nullptr,
+                                              nullptr,
+                                              g4userlimits_gas
+                                             );
+      vis = new G4VisAttributes(G4Color(color[ic])); // grey is good to see the tracks in the display
+      vis->SetForceSolid(true);
+      vis->SetVisibility(true);
+      tile_o_comp_logic->SetVisAttributes(vis);
+      G4VPhysicalVolume* phys = new G4PVPlacement(0, G4ThreeVector(0,0,0),
+                                                  tile_o_comp_logic,
+                                                  cname+"_phys",
+                                                  tile_o_logic, false, 0, OverlapCheck());
+      if (ic==Gas2)
+        m_CylinderZPhysicalVolume.insert(phys);
+      Rm = RM;
+    }
   }
   
   double phi0 = m_Params->get_double_param("phi0") * deg;
@@ -332,39 +344,6 @@ void PHG4CylinderStripDetector::ConstructMe(G4LogicalVolume *logicWorld)
 		             );
   }
 
-  //G4VSolid *cylinder_solid_C = new G4Tubs(G4String(GetName())+"_C",
-  //                                      radius,
-  //                                      radius + thickness,
-  //                                      m_Params->get_double_param("length") * cm / 2., 0, twopi);
-  //G4VSolid *cylinder_solid_Z = new G4Tubs(G4String(GetName())+"_Z",
-  //                                      radius + thickness + gap,
-  //                                      radius + thickness*2 + gap,
-  //                                      m_Params->get_double_param("length") * cm / 2., 0, twopi);
-
-  //G4LogicalVolume *cylinder_logic_C = new G4LogicalVolume(cylinder_solid_C,
-  //                                                      TrackerMaterial,
-  //                                                      G4String(GetName())+"CTileLogic",
-  //                                                      nullptr, nullptr, g4userlimits);
-  //G4LogicalVolume *cylinder_logic_Z = new G4LogicalVolume(cylinder_solid_Z,
-  //                                                      TrackerMaterial,
-  //                                                      G4String(GetName())+"ZTileLogic",
-  //                                                      nullptr, nullptr, g4userlimits);
-  //vis = new G4VisAttributes(G4Color(G4Colour::Grey())); // grey is good to see the tracks in the display
-  //vis->SetForceSolid(true);
-  //cylinder_logic_C->SetVisAttributes(vis);
-  //cylinder_logic_Z->SetVisAttributes(vis);
-  
-
-  //m_CylinderCPhysicalVolume = new G4PVPlacement(0, G4ThreeVector(0,0,0),
-  //                                             cylinder_logic_C,
-  //                                             G4String(GetName())+"CTilePhys",
-  //                                             cylinder_logic, 0, false, OverlapCheck());
-  //m_PhysicalVolumesSet.insert(m_CylinderCPhysicalVolume);
-  //m_CylinderZPhysicalVolume = new G4PVPlacement(0, G4ThreeVector(0,0,0),
-  //                                             cylinder_logic_Z,
-  //                                             G4String(GetName())+"ZTilePhys",
-  //                                             cylinder_logic, 0, false, OverlapCheck());
-  //m_PhysicalVolumesSet.insert(m_CylinderZPhysicalVolume);
   G4RotationMatrix* yRot0 = new G4RotationMatrix;
   yRot0->rotateZ(phi0);
   m_CylinderPhysicalVolume = new G4PVPlacement(G4Transform3D(*yRot0, G4ThreeVector(m_Params->get_double_param("place_x") * cm, m_Params->get_double_param("place_y") * cm, m_Params->get_double_param("place_z") * cm)),
@@ -405,15 +384,15 @@ void PHG4CylinderStripDetector::BuildMaterials(){
   
 
   // air
-  if (!G4Material::GetMaterial("myAir")){
+  if (!G4Material::GetMaterial("myAir", false)){
     G4Material *myAir = new G4Material( "myAir", 0.001205, ncomponents=2, kStateGas, temperature, pressure);
     myAir->AddMaterial( G4_N, fraction = 0.77 );
     myAir->AddMaterial( G4_O, fraction = 0.23 );
   }
 
   // FR4
-  if (!G4Material::GetMaterial("myFR4")){
-    G4Material *myFR4 = new G4Material( "myFR4", 1.860, ncomponents=4);
+  if (!G4Material::GetMaterial("myFR4", false)){
+    G4Material *myFR4 = new G4Material( "myFR4", 1.860, ncomponents=4, kStateSolid);
     myFR4->AddMaterial( G4_C,  fraction = 0.43550 );
     myFR4->AddMaterial( G4_H,  fraction = 0.03650 );
     myFR4->AddMaterial( G4_O,  fraction = 0.28120 );
@@ -421,8 +400,8 @@ void PHG4CylinderStripDetector::BuildMaterials(){
   }
 
   // Kapton
-  if (!G4Material::GetMaterial("myKapton")){
-    G4Material *myKapton = new G4Material( "myKapton", 1.420, ncomponents=4);
+  if (!G4Material::GetMaterial("myKapton", false)){
+    G4Material *myKapton = new G4Material( "myKapton", 1.420, ncomponents=4, kStateSolid);
     myKapton->AddMaterial( G4_C, 0.6911330 );
     myKapton->AddMaterial( G4_H, 0.0263620 );
     myKapton->AddMaterial( G4_N, 0.0732700 );
@@ -430,16 +409,16 @@ void PHG4CylinderStripDetector::BuildMaterials(){
   }
 
   // MMgas
-  if (!G4Material::GetMaterial("myMMGas")){
-    G4Material *myMMGas = new G4Material( "myMMGas", 0.00170335, ncomponents=3);
+  if (!G4Material::GetMaterial("myMMGas", false)){
+    G4Material *myMMGas = new G4Material( "myMMGas", 0.00170335, ncomponents=3, kStateGas, temperature, pressure);
     myMMGas->AddMaterial( G4_Ar, 0.900 );
     myMMGas->AddMaterial( G4_C,  0.0826586 );
     myMMGas->AddMaterial( G4_H,  0.0173414 );
   }
 
   // MMMesh
-  if (!G4Material::GetMaterial("myMMMesh")){
-    G4Material *myMMMesh = new G4Material( "myMMMesh", 2.8548, ncomponents=5);
+  if (!G4Material::GetMaterial("myMMMesh", false)){
+    G4Material *myMMMesh = new G4Material( "myMMMesh", 2.8548, ncomponents=5, kStateSolid);
     myMMMesh->AddMaterial( G4_Cr, 0.1900 );
     myMMMesh->AddMaterial( G4_Fe, 0.6800 );
     myMMMesh->AddMaterial( G4_Mn, 0.0200 );
@@ -448,20 +427,20 @@ void PHG4CylinderStripDetector::BuildMaterials(){
   }
 
   // MMStrips
-  if (!G4Material::GetMaterial("myMMStrips")){
-    G4Material *myMMStrips = new G4Material( "myMMStrips", 5.248414, G4_Cu);
+  if (!G4Material::GetMaterial("myMMStrips", false)){
+    G4Material *myMMStrips = new G4Material( "myMMStrips", 5.248414, G4_Cu, kStateSolid);
     cout << myMMStrips->GetName() << endl;
   }
 
   // MMResistivePaste
-  if (!G4Material::GetMaterial("myMMResistivePaste")){
-    G4Material *myMMResistivePaste = new G4Material( "myMMResistivePaste", 0.77906, G4_C);
+  if (!G4Material::GetMaterial("myMMResistivePaste", false)){
+    G4Material *myMMResistivePaste = new G4Material( "myMMResistivePaste", 0.77906, G4_C, kStateSolid);
     cout << myMMResistivePaste->GetName() << endl;
   }
 
   // Copper
-  if (!G4Material::GetMaterial("myCopper")){
-    G4Material *myCopper = new G4Material("myCopper", 8.9600, G4_Cu);
+  if (!G4Material::GetMaterial("myCopper", false)){
+    G4Material *myCopper = new G4Material("myCopper", 8.9600, G4_Cu, kStateSolid);
     cout << myCopper->GetName() << endl;
   }
 }
