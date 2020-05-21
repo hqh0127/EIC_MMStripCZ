@@ -107,7 +107,7 @@ void Fun4All_G4_Example01(int nEvents = 1)
     gap_betweenCZ = 0;
     nCZlayer = 1;
   }
-  //Gap_betweenlayer = (60-nCZlayer*thickness-gap_betweenCZ)/5.-(nCZlayer*thickness + gap_betweenCZ);
+  //Gap_betweenlayer = (60-nCZlayer*thickness-gap_betweenCZ)/5.-(nCZlayer*thickness + gap_betweenCZ); // this is to create equal spaced 2D readout layers
 
   //double BMT_r[6] = {15., 19., 44.25, 48.25, 73.5, 77.5}; // for CZ strip readout
   double BMT_r[6] = {20., 20.+nCZlayer*thickness+gap_betweenCZ+Gap_betweenlayer, 50-nCZlayer*thickness-gap_betweenCZ-Gap_betweenlayer/2, 50+Gap_betweenlayer/2, 80-(nCZlayer*thickness+gap_betweenCZ)*2-Gap_betweenlayer, 80-nCZlayer*thickness-gap_betweenCZ};
@@ -136,6 +136,7 @@ void Fun4All_G4_Example01(int nEvents = 1)
   double si_thickness[6] = {0.02, 0.02, 0.0625, 0.032, 0.032, 0.032};
   double svxrad[6] = {2.9238, 5.38772, 7.82395, 10.8585, 13.2827, 15.7054};
   double length[6] = {40., 40., 40., 40., 40., 40.};  // -1 use eta coverage to determine length
+  /*
   PHG4CylinderSubsystem *cyl;
   // here is our silicon:
   for (int ilayer = 0; ilayer < 6; ilayer++)
@@ -161,6 +162,7 @@ void Fun4All_G4_Example01(int nEvents = 1)
   cyl->SetActive();
   cyl->BlackHole(); // eats everything
   //g4Reco->registerSubsystem(cyl);
+  */
 
   // read-in HepMC events to Geant4 if there is any
   HepMCNodeReader *hr = new HepMCNodeReader();
