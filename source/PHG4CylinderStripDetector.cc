@@ -308,53 +308,41 @@ void PHG4CylinderStripDetector::ConstructMe(G4LogicalVolume *logicWorld)
   double radius_mecaPCB = radius + thickness/2. - thickness_mecaPCB/2.;
   // build a mother volume filled by carbon fiber using union volume
   G4VSolid *mecaPCB_solid = new G4Tubs("mecaPCB_solid",
-                                radius_mecaPCB,
-                                radius_mecaPCB + thickness_mecaPCB,
+                                radius_mecaPCB-0.001*mm,
+                                radius_mecaPCB + thickness_mecaPCB+0.001*mm,
                                 m_Params->get_double_param("length") * cm / 2.,
-                                0,
-                                (spacer-2*barwidth-2.5*mm)/(radius)*radian
+                                360./Ntiles*deg-(spacer-2*barwidth+1*mm)/radius_mecaPCB*radian,
+                                (spacer-2*barwidth)/(radius_mecaPCB)*radian
                                 );
   G4VSolid *MM_solid = new G4Tubs("MM_solid",
                                 radius - 0.001*mm,
                                 radius + thickness + 0.001*mm,
                                 m_Params->get_double_param("length") * cm / 2. + barwidth + .1*mm,
-                                //0, deltaPhi*deg
                                 barwidth/radius*radian- 0.5*mm/radius*radian, 
-                                barwidth/radius*radian + deltaPhi*deg + 0.5*mm/radius*radian
+                                deltaPhi*deg + 0.5*mm/radius*radian
                                 );
   G4VSolid *bar_solid = GetHollowBar();
-  //G4VSolid *arch_solid = new G4Tubs("Arch_solid",
-  //                              radius + thickness/2 - barwidth/2.,
-  //                              radius + thickness/2 + barwidth/2.,
-  //                              barwidth/2.,
-  //                              barwidth/radius*radian- 0.5*mm/radius*radian, 
-  //                              barwidth/radius*radian + deltaPhi*deg + 0.5*mm/radius*radian
-  //                              );
+  
   G4RotationMatrix* zrot = new G4RotationMatrix;
   double rotang_bar2= barwidth/2./radius*radian;
   zrot->rotateZ(rotang_bar2);
   G4VSolid* u1 = new G4UnionSolid("MM+bar1", MM_solid, bar_solid, G4Transform3D(*zrot, G4ThreeVector((radius + thickness/2.)*TMath::Cos(rotang_bar2), (radius + thickness/2.)*TMath::Sin(rotang_bar2), 0)));
   
-  rotang_bar2 = 360./Ntiles*deg+rotang_bar2-((spacer-2*barwidth)/radius*radian)-0.5*mm/radius*radian;
+  rotang_bar2 = 360./Ntiles*deg+rotang_bar2-((spacer-barwidth)/radius*radian)-0.5*mm/radius*radian;
   zrot->setDelta(twopi - (360./Ntiles*deg-((spacer-barwidth)/radius*radian) - 90*deg));
   u1 = new G4UnionSolid("MM+bar1+bar2", u1, bar_solid, zrot, G4ThreeVector((radius + thickness/2.)*TMath::Cos(rotang_bar2), (radius + thickness/2.)*TMath::Sin(rotang_bar2), 0));
-  //G4VSolid* u3 = new G4UnionSolid("MM+bar1+bar2+arch1", u2, arch_solid, nullptr, G4ThreeVector(0,0, m_Params->get_double_param("length") * cm / 2.+barwidth/2.));
-  //G4VSolid* u4 = new G4UnionSolid("MM+bar1+bar2+arch1+arch2", u3, arch_solid, nullptr, G4ThreeVector(0,0, -(m_Params->get_double_param("length") * cm/2. + barwidth/2.)));
-  //zrot->setDelta(360./Ntiles*deg - (spacer-3*barwidth)/radius_mecaPCB*radian);
-  G4RotationMatrix* zrotx = new G4RotationMatrix();
-  zrotx->setDelta(deltaPhi*deg + 2*barwidth/radius *radian + 2*mm/radius);
-  u1 = new G4UnionSolid("MM+bar1+bar2+arch1+arch2+meca", u1, mecaPCB_solid, G4Transform3D(*zrotx, G4ThreeVector(0,0,0)));
+  //G4RotationMatrix* zrotx = new G4RotationMatrix();
+  //zrotx->rotateZ(deltaPhi*deg + 2*barwidth/radius *radian + 2*mm/radius);
+  //u1 = new G4UnionSolid("MM+bar1+bar2+arch1+arch2+meca", u1, mecaPCB_solid, G4Transform3D(*zrotx, G4ThreeVector(0,0,0)));
+  u1 = new G4UnionSolid("MM+bar1+bar2+arch1+arch2+meca", u1, mecaPCB_solid);
   // logic volume filled with carbon fiber
   G4LogicalVolume *u5_C_logic = new G4LogicalVolume(u1,
                                                   G4Material::GetMaterial("G4_C"),
                                                   "u5_C_logic"
                                                  );
-  //G4LogicalVolume *bar_logic = new G4LogicalVolume(u5,
-  //                                                G4Material::GetMaterial("G4_C"),
-  //                                                "u5_C_logic"
-  //                                               );
+  
   vis = new G4VisAttributes(G4Color(G4Colour::Grey())); // grey is good to see the tracks in the display
-  vis->SetForceSolid(true);
+  vis->SetForceSolid(false);
   vis->SetVisibility(true);
   u5_C_logic->SetVisAttributes(vis);
   zrot->setDelta(0);
@@ -393,7 +381,7 @@ void PHG4CylinderStripDetector::ConstructMe(G4LogicalVolume *logicWorld)
                                            );
     vis = new G4VisAttributes(G4Color(color[ic])); // grey is good to see the tracks in the display
     vis->SetForceSolid(true);
-    vis->SetVisibility(false);
+    vis->SetVisibility(true);
     tile_o_comp_logic->SetVisAttributes(vis);
     zrot->setDelta(barwidth/radius*radian);
     G4VPhysicalVolume* phys = new G4PVPlacement(G4Transform3D(*zrot, G4ThreeVector(0,0,0)),
@@ -405,7 +393,6 @@ void PHG4CylinderStripDetector::ConstructMe(G4LogicalVolume *logicWorld)
     Rm = RM;
   }
   
-  /*
   for ( int ic =0; ic < kNcomponents_meca; ic++ ){
 	  G4String cname = G4String(GetName())+"_tileC" + "_" + names_meca[ic];
     
@@ -415,8 +402,8 @@ void PHG4CylinderStripDetector::ConstructMe(G4LogicalVolume *logicWorld)
                              Rm_meca,
                              RM_meca,
                              m_Params->get_double_param("length") * cm / 2., 
-                             2*barwidth/radius*radian + deltaPhi*deg, 
-                             2*barwidth/radius*radian + deltaPhi*deg + (spacer - barwidth)/radius*radian
+                             0, 
+                             (spacer-2*barwidth-0.001*mm)/(radius_mecaPCB)*radian
                             );
     tile_o_comp_logic = new G4LogicalVolume(tile_o_comp,
                                             media_meca[ic],
@@ -424,10 +411,12 @@ void PHG4CylinderStripDetector::ConstructMe(G4LogicalVolume *logicWorld)
                                            );
     vis = new G4VisAttributes(G4Color(color_meca[ic])); // grey is good to see the tracks in the display
     vis->SetForceSolid(true);
-    vis->SetVisibility(false);
+    vis->SetVisibility(true);
     tile_o_comp_logic->SetVisAttributes(vis);
-    new G4PVPlacement(0, 
-                      G4ThreeVector(0,0,0),
+    G4RotationMatrix* zrot_tmp = new G4RotationMatrix();
+    zrot_tmp->rotateZ(360./Ntiles*deg-(spacer-2*barwidth+1*mm)/radius_mecaPCB*radian);
+    new G4PVPlacement(G4Transform3D(*zrot_tmp, 
+                      G4ThreeVector(0,0,0)),
                       tile_o_comp_logic,
                       cname+"_phys",
                       u5_C_logic, 
@@ -437,7 +426,6 @@ void PHG4CylinderStripDetector::ConstructMe(G4LogicalVolume *logicWorld)
                      );
     Rm_meca = RM_meca;
   }
-  */
   
   /*
   if (nCZlayer == 2){
@@ -476,7 +464,7 @@ void PHG4CylinderStripDetector::ConstructMe(G4LogicalVolume *logicWorld)
                                              );
       vis = new G4VisAttributes(G4Color(color[ic])); // grey is good to see the tracks in the display
       vis->SetForceSolid(true);
-      vis->SetVisibility(false);
+      vis->SetVisibility(true);
       tile_o_comp_logic->SetVisAttributes(vis);
       G4VPhysicalVolume* phys = new G4PVPlacement(0, G4ThreeVector(0,0,0),
                                                   tile_o_comp_logic,
