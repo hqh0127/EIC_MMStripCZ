@@ -312,7 +312,7 @@ void PHG4CylinderStripDetector::ConstructMe(G4LogicalVolume *logicWorld)
                                 radius_mecaPCB + thickness_mecaPCB,
                                 m_Params->get_double_param("length") * cm / 2.,
                                 0,
-                                (spacer-2*barwidth-1*mm)/(radius)*radian
+                                (spacer-2*barwidth-2.5*mm)/(radius)*radian
                                 );
   G4VSolid *MM_solid = new G4Tubs("MM_solid",
                                 radius - 0.001*mm,
@@ -341,8 +341,9 @@ void PHG4CylinderStripDetector::ConstructMe(G4LogicalVolume *logicWorld)
   //G4VSolid* u3 = new G4UnionSolid("MM+bar1+bar2+arch1", u2, arch_solid, nullptr, G4ThreeVector(0,0, m_Params->get_double_param("length") * cm / 2.+barwidth/2.));
   //G4VSolid* u4 = new G4UnionSolid("MM+bar1+bar2+arch1+arch2", u3, arch_solid, nullptr, G4ThreeVector(0,0, -(m_Params->get_double_param("length") * cm/2. + barwidth/2.)));
   //zrot->setDelta(360./Ntiles*deg - (spacer-3*barwidth)/radius_mecaPCB*radian);
-  zrot->setPhi(deltaPhi*deg + 2*barwidth/radius *radian);
-  u1 = new G4UnionSolid("MM+bar1+bar2+arch1+arch2+meca", u1, mecaPCB_solid, G4Transform3D(*zrot, G4ThreeVector(0,0,0)));
+  G4RotationMatrix* zrotx = new G4RotationMatrix();
+  zrotx->setDelta(deltaPhi*deg + 2*barwidth/radius *radian + 2*mm/radius);
+  u1 = new G4UnionSolid("MM+bar1+bar2+arch1+arch2+meca", u1, mecaPCB_solid, G4Transform3D(*zrotx, G4ThreeVector(0,0,0)));
   // logic volume filled with carbon fiber
   G4LogicalVolume *u5_C_logic = new G4LogicalVolume(u1,
                                                   G4Material::GetMaterial("G4_C"),
