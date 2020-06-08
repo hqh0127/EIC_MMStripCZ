@@ -103,7 +103,7 @@ void Fun4All_G4_Example01(int nEvents = 1)
   //double thickness = 0.355199;
   double thickness = 0.36499;
   int nCZlayer = 2;
-  bool use_2Dreadout = true;
+  bool use_2Dreadout = false;
   if (use_2Dreadout) {
     gap_betweenCZ = 0;
     nCZlayer = 1;
@@ -126,6 +126,8 @@ void Fun4All_G4_Example01(int nEvents = 1)
     example01->SuperDetector("BMT");
     example01->set_int_param("lengthviarapidity",0);
     example01->set_double_param("length", bmt_length);
+    example01->set_double_param("deadzone", 0.2);
+    example01->set_int_param("nhit", 2);
     example01->OverlapCheck(true);
     example01->set_int_param("use_2Dreadout",use_2Dreadout);
     g4Reco->registerSubsystem(example01);
@@ -202,6 +204,7 @@ void Fun4All_G4_Example01(int nEvents = 1)
   //kalman->set_do_evt_display(true);
 
   //  add Si Trtacker
+  /*
   kalman->add_phg4hits(
       "G4HIT_SVTX",                //      const std::string& phg4hitsNames,
       PHG4TrackFastSim::Cylinder,  //      const DETECTOR_TYPE phg4dettype,
@@ -211,6 +214,7 @@ void Fun4All_G4_Example01(int nEvents = 1)
       1,                           //      efficiency,
       0                            //      noise hits
   );
+  */
   if (use_2Dreadout) {
     kalman->add_phg4hits(
         "G4HIT_BMT",                //      const std::string& phg4hitsNames,

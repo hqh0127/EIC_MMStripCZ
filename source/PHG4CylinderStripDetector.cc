@@ -221,9 +221,12 @@ void PHG4CylinderStripDetector::ConstructMe(G4LogicalVolume *logicWorld)
   // determine length of cylinder using PHENIX's rapidity coverage if flag is true
   double radius = m_Params->get_double_param("radius") * cm;
   double gap = m_Params->get_double_param("gap") * cm;
+  double gas_deadzone = m_Params->get_double_param("deadzone") * cm;
+  int nhit = 1;
   
   int nCZlayer = 2;
   if (m_Params->get_int_param("use_2Dreadout")){
+    nhit = m_Params->get_int_param("nhit");
     nCZlayer = 1;
     gap = 0;
   }
@@ -336,19 +339,19 @@ void PHG4CylinderStripDetector::ConstructMe(G4LogicalVolume *logicWorld)
   //u1 = new G4UnionSolid("MM+bar1+bar2+arch1+arch2+meca", u1, mecaPCB_solid, G4Transform3D(*zrotx, G4ThreeVector(0,0,0)));
   u1 = new G4UnionSolid("MM+bar1+bar2+arch1+arch2+meca", u1, mecaPCB_solid);
   // logic volume filled with carbon fiber
-  G4LogicalVolume *u5_C_logic = new G4LogicalVolume(u1,
+  G4LogicalVolume *u1_C_logic = new G4LogicalVolume(u1,
                                                   G4Material::GetMaterial("G4_C"),
-                                                  "u5_C_logic"
+                                                  "u1_C_logic"
                                                  );
   
   vis = new G4VisAttributes(G4Color(G4Colour::Grey())); // grey is good to see the tracks in the display
   vis->SetForceSolid(false);
   vis->SetVisibility(true);
-  u5_C_logic->SetVisAttributes(vis);
+  u1_C_logic->SetVisAttributes(vis);
   zrot->setDelta(0);
   new G4PVPlacement(G4Transform3D(*zrot, G4ThreeVector(0,0,0)),
-                    u5_C_logic,
-                    "u5_C_phys",
+                    u1_C_logic,
+                    "u1_C_phys",
                     tile_o_logic, false, 0, OverlapCheck());
 
   float Rm = radius;
@@ -366,31 +369,58 @@ void PHG4CylinderStripDetector::ConstructMe(G4LogicalVolume *logicWorld)
 
 	  G4String cname = G4String(GetName())+"_tileC" + "_" + names[ic];
     
-    RM = Rm + thick[ic];
-
-    tile_o_comp = new G4Tubs(cname+"_solid",
-                             Rm,
-                             RM,
-                             m_Params->get_double_param("length") * cm / 2., 0, deltaPhi*deg);
-    tile_o_comp_logic = new G4LogicalVolume(tile_o_comp,
-                                            media[ic],
-                                            cname+"_logic",
-                                            nullptr,
-                                            nullptr,
-                                            g4userlimits_gas
-                                           );
+    zrot->setDelta(barwidth/radius*radian);
+    G4VPhysicalVolume* phys = nullptr;
+    
     vis = new G4VisAttributes(G4Color(color[ic])); // grey is good to see the tracks in the display
     vis->SetForceSolid(true);
     vis->SetVisibility(true);
-    tile_o_comp_logic->SetVisAttributes(vis);
-    zrot->setDelta(barwidth/radius*radian);
-    G4VPhysicalVolume* phys = new G4PVPlacement(G4Transform3D(*zrot, G4ThreeVector(0,0,0)),
-                                                tile_o_comp_logic,
-                                                cname+"_phys",
-                                                u5_C_logic, false, 0, OverlapCheck());
+
+    if (ic == Gas2){
+      thick[ic] /= nhit;
+      for (int ii=0; ii< nhit; ii++){
+        RM = Rm+ thick[ic];
+        tile_o_comp = new G4Tubs(cname+"_solid",
+                                 Rm,
+                                 RM,
+                                 m_Params->get_double_param("length") * cm / 2.- gas_deadzone, gas_deadzone/Rm*radian, deltaPhi*deg - 2*gas_deadzone/Rm*radian);
+        tile_o_comp_logic = new G4LogicalVolume(tile_o_comp,
+                                                media[ic],
+                                                cname+"_logic",
+                                                nullptr,
+                                                nullptr,
+                                                g4userlimits_gas
+                                               );
+        tile_o_comp_logic->SetVisAttributes(vis);
+        Rm = RM;
+        phys = new G4PVPlacement(G4Transform3D(*zrot, G4ThreeVector(0,0,0)),
+                                                    tile_o_comp_logic,
+                                                    cname+"_phys",
+                                                    u1_C_logic, false, 0, OverlapCheck());
+      }
+    }
+    else{
+      RM = Rm + thick[ic];
+      tile_o_comp = new G4Tubs(cname+"_solid",
+                               Rm,
+                               RM,
+                               m_Params->get_double_param("length") * cm / 2., 0, deltaPhi*deg);
+      tile_o_comp_logic = new G4LogicalVolume(tile_o_comp,
+                                              media[ic],
+                                              cname+"_logic",
+                                              nullptr,
+                                              nullptr,
+                                              g4userlimits_gas
+                                             );
+      tile_o_comp_logic->SetVisAttributes(vis);
+      Rm = RM;
+      phys = new G4PVPlacement(G4Transform3D(*zrot, G4ThreeVector(0,0,0)),
+                                                  tile_o_comp_logic,
+                                                  cname+"_phys",
+                                                  u1_C_logic, false, 0, OverlapCheck());
+    }
     if (ic==Gas2)
 	    m_CylinderCPhysicalVolume.insert(phys);
-    Rm = RM;
   }
   
   for ( int ic =0; ic < kNcomponents_meca; ic++ ){
@@ -419,7 +449,7 @@ void PHG4CylinderStripDetector::ConstructMe(G4LogicalVolume *logicWorld)
                       G4ThreeVector(0,0,0)),
                       tile_o_comp_logic,
                       cname+"_phys",
-                      u5_C_logic, 
+                      u1_C_logic, 
                       false, 
                       0, 
                       OverlapCheck()
@@ -427,20 +457,27 @@ void PHG4CylinderStripDetector::ConstructMe(G4LogicalVolume *logicWorld)
     Rm_meca = RM_meca;
   }
   
-  /*
   if (nCZlayer == 2){
-    Rm += gap;
-    RM += gap;
-    Rm_meca = Rm + thickness/2. - thickness_mecaPCB/2.;
-    RM = Rm_meca;
+    //Rm += gap;
+    //RM += gap;
+    //Rm_meca = Rm + thickness/2. - thickness_mecaPCB/2.;
+    //RM_meca = Rm_meca;
+    Rm = radius;
+    RM = Rm;
+    Rm_meca = radius_mecaPCB;
+    RM_meca = Rm_meca;
     // logic volume filled with carbon fiber
-    G4LogicalVolume *u5_Z_logic = new G4LogicalVolume(u5,
+    G4LogicalVolume *u1_Z_logic = new G4LogicalVolume(u1,
                                                     G4Material::GetMaterial("G4_C"),
-                                                    "u5_Z_logic"
+                                                    "u1_Z_logic"
                                                    );
-    new G4PVPlacement(0, G4ThreeVector(0,0,0),
-                      u5_Z_logic,
-                      "u5_Z_phys",
+    vis = new G4VisAttributes(G4Color(G4Colour::Grey())); // grey is good to see the tracks in the display
+    vis->SetForceSolid(false);
+    vis->SetVisibility(true);
+    u1_Z_logic->SetVisAttributes(vis);
+    new G4PVPlacement(0, G4ThreeVector((gap+thickness)*TMath::Cos(360./Ntiles*deg/2.),(gap+thickness)*TMath::Sin(360./Ntiles*deg/2.),0),
+                      u1_Z_logic,
+                      "u1_Z_phys",
                       tile_o_logic, false, 0, OverlapCheck());
     for( int ic = 0; ic < kNcomponents; ic++ ){
       G4UserLimits* g4userlimits_gas = nullptr; 
@@ -451,31 +488,53 @@ void PHG4CylinderStripDetector::ConstructMe(G4LogicalVolume *logicWorld)
       
       RM = Rm + thick[ic];
 
-      tile_o_comp = new G4Tubs(cname+"_solid",
-                               Rm,
-                               RM,
-                               m_Params->get_double_param("length") * cm / 2., 0, deltaPhi*deg);
-      tile_o_comp_logic = new G4LogicalVolume(tile_o_comp,
-                                              media[ic],
-                                              cname+"_logic",
-                                              nullptr,
-                                              nullptr,
-                                              g4userlimits_gas
-                                             );
+      if (ic == Gas2){
+        thick[ic] /= nhit;
+        for (int ii=0; ii< nhit; ii++){
+          RM = Rm+ thick[ic];
+          tile_o_comp = new G4Tubs(cname+"_solid",
+                                   Rm,
+                                   RM,
+                                   m_Params->get_double_param("length") * cm / 2.- gas_deadzone, gas_deadzone/Rm*radian, deltaPhi*deg - 2*gas_deadzone/Rm*radian);
+          tile_o_comp_logic = new G4LogicalVolume(tile_o_comp,
+                                                  media[ic],
+                                                  cname+"_logic",
+                                                  nullptr,
+                                                  nullptr,
+                                                  g4userlimits_gas
+                                                 );
+          Rm = RM;
+        }
+      }
+      else{
+        RM = Rm + thick[ic];
+        tile_o_comp = new G4Tubs(cname+"_solid",
+                                 Rm,
+                                 RM,
+                                 m_Params->get_double_param("length") * cm / 2., 0, deltaPhi*deg);
+        tile_o_comp_logic = new G4LogicalVolume(tile_o_comp,
+                                                media[ic],
+                                                cname+"_logic",
+                                                nullptr,
+                                                nullptr,
+                                                g4userlimits_gas
+                                               );
+        Rm = RM;
+      }
       vis = new G4VisAttributes(G4Color(color[ic])); // grey is good to see the tracks in the display
       vis->SetForceSolid(true);
       vis->SetVisibility(true);
       tile_o_comp_logic->SetVisAttributes(vis);
-      G4VPhysicalVolume* phys = new G4PVPlacement(0, G4ThreeVector(0,0,0),
+      zrot->setDelta(barwidth/radius*radian);
+      G4VPhysicalVolume* phys = new G4PVPlacement(G4Transform3D(*zrot, G4ThreeVector(0,0,0)),
                                                   tile_o_comp_logic,
                                                   cname+"_phys",
-                                                  u5_Z_logic, false, 0, OverlapCheck());
+                                                  u1_Z_logic, false, 0, OverlapCheck());
       if (ic==Gas2)
         m_CylinderZPhysicalVolume.insert(phys);
-      Rm = RM;
     }
     for ( int ic =0; ic < kNcomponents_meca; ic++ ){
-	    G4String cname = G4String(GetName())+"_tileC" + "_" + names_meca[ic];
+	    G4String cname = G4String(GetName())+"_tileZ" + "_" + names_meca[ic];
       
       RM_meca = Rm_meca + thick_meca[ic];
 
@@ -483,8 +542,8 @@ void PHG4CylinderStripDetector::ConstructMe(G4LogicalVolume *logicWorld)
                                Rm_meca,
                                RM_meca,
                                m_Params->get_double_param("length") * cm / 2., 
-                               2*barwidth/radius*radian + deltaPhi*deg, 
-                               2*barwidth/radius*radian + deltaPhi*deg + (spacer - barwidth)/radius*radian
+                               0, 
+                               (spacer-2*barwidth-0.001*mm)/(radius_mecaPCB)*radian
                               );
       tile_o_comp_logic = new G4LogicalVolume(tile_o_comp,
                                               media_meca[ic],
@@ -492,13 +551,15 @@ void PHG4CylinderStripDetector::ConstructMe(G4LogicalVolume *logicWorld)
                                              );
       vis = new G4VisAttributes(G4Color(color_meca[ic])); // grey is good to see the tracks in the display
       vis->SetForceSolid(true);
-      vis->SetVisibility(false);
+      vis->SetVisibility(true);
       tile_o_comp_logic->SetVisAttributes(vis);
-      new G4PVPlacement(0, 
-                        G4ThreeVector(0,0,0),
+      G4RotationMatrix* zrot_tmp2 = new G4RotationMatrix();
+      zrot_tmp2->rotateZ(360./Ntiles*deg-(spacer-2*barwidth+1*mm)/radius_mecaPCB*radian);
+      new G4PVPlacement(G4Transform3D(*zrot_tmp2, 
+                        G4ThreeVector(0,0,0)),
                         tile_o_comp_logic,
                         cname+"_phys",
-                        u5_C_logic, 
+                        u1_Z_logic, 
                         false, 
                         0, 
                         OverlapCheck()
@@ -506,7 +567,6 @@ void PHG4CylinderStripDetector::ConstructMe(G4LogicalVolume *logicWorld)
       Rm_meca = RM_meca;
     }
   }
-  */
 
   // repeate N tiles 
   for( int i=0; i<Ntiles; i++ ){
