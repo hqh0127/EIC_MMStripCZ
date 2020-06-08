@@ -100,7 +100,8 @@ void Fun4All_G4_Example01(int nEvents = 1)
   //g4Reco->SetPhysicsList("FTFP_BERT_HP");
 
   double gap_betweenCZ = 1.5, Gap_betweenlayer = 1.5;
-  double thickness = 0.355199;
+  //double thickness = 0.355199;
+  double thickness = 0.36499;
   int nCZlayer = 2;
   bool use_2Dreadout = true;
   if (use_2Dreadout) {

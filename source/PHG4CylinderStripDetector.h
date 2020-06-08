@@ -47,6 +47,9 @@ class PHG4CylinderStripDetector : public PHG4Detector
 
   int m_Layer;
   std::string m_SuperDetector;
+  G4VSolid* GetHollowBar();
+  double thickness;
+  double barwidth;
 };
 
 #endif
