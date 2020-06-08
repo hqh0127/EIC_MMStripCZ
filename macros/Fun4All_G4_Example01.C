@@ -103,7 +103,7 @@ void Fun4All_G4_Example01(int nEvents = 1)
   //double thickness = 0.355199;
   double thickness = 0.36499;
   int nCZlayer = 2;
-  bool use_2Dreadout = false;
+  bool use_2Dreadout = true;
   if (use_2Dreadout) {
     gap_betweenCZ = 0;
     nCZlayer = 1;

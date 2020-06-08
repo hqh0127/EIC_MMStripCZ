@@ -97,30 +97,30 @@ void PHG4CylinderStripDetector::ConstructMe(G4LogicalVolume *logicWorld)
     std::cout << "Error: Can not set Micromegas Gas" << std::endl;
     gSystem->Exit(1);
   }
-  
+
   // components
   enum components {
-    coverlay,       
-    CuGround,       
-    PCB     ,       
-    CuStrips,       
-    KaptonStrips,   
+    coverlay,
+    CuGround,
+    PCB     ,
+    CuStrips,
+    KaptonStrips,
     ResistiveStrips,
     Gas1         ,
     Mesh         ,
     Gas2         ,
-    DriftCuElectrode,       
-    DriftKapton,   
+    DriftCuElectrode,
+    DriftKapton,
     DriftCuGround,
     kNcomponents
   };
   // component names
   G4String names[] = {
-    "coverlay",       
-    "CuGround",       
-    "PCB"     ,       
-    "CuStrips",       
-    "KaptonStrips",   
+    "coverlay",
+    "CuGround",
+    "PCB"     ,
+    "CuStrips",
+    "KaptonStrips",
     "ResistiveStrips",
     "Gas1"         ,
     "Mesh"         ,
@@ -161,7 +161,7 @@ void PHG4CylinderStripDetector::ConstructMe(G4LogicalVolume *logicWorld)
   media[ DriftCuElectrode] = G4Material::GetMaterial("myCopper"           );
   media[ DriftKapton     ] = G4Material::GetMaterial("myKapton"           );
   media[ DriftCuGround   ] = G4Material::GetMaterial("myCopper"           );
-  
+
   // color
   map<int, G4Colour> color;
   color[ coverlay        ] = G4Colour(204/255., 153/255., 0);
@@ -179,19 +179,19 @@ void PHG4CylinderStripDetector::ConstructMe(G4LogicalVolume *logicWorld)
 
   // components meca PCB
   enum components_meca {
-    Cu1_meca,       
-    FR4_1_meca,       
-    Cu2_meca,       
-    FR4_2_meca,   
+    Cu1_meca,
+    FR4_1_meca,
+    Cu2_meca,
+    FR4_2_meca,
     Cu3_meca,
     kNcomponents_meca
   };
   // component names
   G4String names_meca[] = {
-    "Cu1_meca",       
-    "FR4_1_meca",       
-    "Cu2_meca",       
-    "FR4_2_meca",   
+    "Cu1_meca",
+    "FR4_1_meca",
+    "Cu2_meca",
+    "FR4_2_meca",
     "Cu3_meca"
   };
 
@@ -210,7 +210,7 @@ void PHG4CylinderStripDetector::ConstructMe(G4LogicalVolume *logicWorld)
   media_meca[ Cu2_meca        ] = G4Material::GetMaterial("myCopper"           );
   media_meca[ FR4_2_meca      ] = G4Material::GetMaterial("myFR4"              );
   media_meca[ Cu3_meca        ] = G4Material::GetMaterial("myCopper"           );
-  
+
   // color
   map<int, G4Colour> color_meca;
   color_meca[ Cu1_meca        ] = G4Colour::Brown();
@@ -223,14 +223,14 @@ void PHG4CylinderStripDetector::ConstructMe(G4LogicalVolume *logicWorld)
   double gap = m_Params->get_double_param("gap") * cm;
   double gas_deadzone = m_Params->get_double_param("deadzone") * cm;
   int nhit = 1;
-  
+
   int nCZlayer = 2;
   if (m_Params->get_int_param("use_2Dreadout")){
     nhit = m_Params->get_int_param("nhit");
     nCZlayer = 1;
     gap = 0;
   }
-  
+
   if (nCZlayer==2) thick[CuStrips] = 9*um;
   else if (nCZlayer==1) thick[CuStrips] = 25*um;
 
@@ -241,16 +241,16 @@ void PHG4CylinderStripDetector::ConstructMe(G4LogicalVolume *logicWorld)
   }
   cout << "The tile thickness is " << thickness/mm << " mm" << endl;
   if (barwidth < thickness) barwidth = thickness;
-  
+
   // make a "sub-world": a tube that contains all the tiles of this layer
   // --------------------------------------------------------------------
 
   // max thickness (cm)
-  
+
 
   // radius is defined from the middle of the tracker layer, and now move it to the lower boundary of the bottom MM layer (1D), or to the lower boundary of the MM layer (2D)
   radius = radius - gap/2. - thickness/2. * nCZlayer;
-  
+
   double spaceforhollowbar = 6*mm;
 
   G4VSolid *cylinder_solid = new G4Tubs(G4String(GetName()),
@@ -265,7 +265,7 @@ void PHG4CylinderStripDetector::ConstructMe(G4LogicalVolume *logicWorld)
   vis->SetForceSolid(false);
   vis->SetVisibility(false);
   cylinder_logic->SetVisAttributes(vis);
-  
+
   // add mother logical volume to subsystem
   PHG4Subsystem *mysys = GetMySubsystem();
   mysys->SetLogicalVolume(cylinder_logic);
@@ -273,13 +273,13 @@ void PHG4CylinderStripDetector::ConstructMe(G4LogicalVolume *logicWorld)
 
   // compute how many tiles
   // ----------------------
- 
+
   float maxTileWidth = 50.*cm;  // cm
-  float spacer = 2.*cm ;       // cm, mechanical space between tiles, to be filled with carbon fiber 
+  float spacer = 2.*cm ;       // cm, mechanical space between tiles, to be filled with carbon fiber
 
   float circumference = twopi * radius;
   int Ntiles = ceil( circumference / (maxTileWidth + spacer) );
-  
+
   float tileW = ( circumference - Ntiles*spacer )/Ntiles;
 
   cout << setw(10) << radius << setw(10) << "Ntiles: " << Ntiles << setw(20) << "tileW: " << tileW<<endl;
@@ -306,7 +306,7 @@ void PHG4CylinderStripDetector::ConstructMe(G4LogicalVolume *logicWorld)
                                                       G4String(GetName())+"_tile_logic"
                                                      );
   tile_o_logic->SetVisAttributes(vis);
-  
+
   double thickness_mecaPCB = 25*um + 100*um + 25*um + 100*um + 9*um;
   double radius_mecaPCB = radius + thickness/2. - thickness_mecaPCB/2.;
   // build a mother volume filled by carbon fiber using union volume
@@ -321,16 +321,16 @@ void PHG4CylinderStripDetector::ConstructMe(G4LogicalVolume *logicWorld)
                                 radius - 0.001*mm,
                                 radius + thickness + 0.001*mm,
                                 m_Params->get_double_param("length") * cm / 2. + barwidth + .1*mm,
-                                barwidth/radius*radian- 0.5*mm/radius*radian, 
+                                barwidth/radius*radian- 0.5*mm/radius*radian,
                                 deltaPhi*deg + 0.5*mm/radius*radian
                                 );
   G4VSolid *bar_solid = GetHollowBar();
-  
+
   G4RotationMatrix* zrot = new G4RotationMatrix;
   double rotang_bar2= barwidth/2./radius*radian;
   zrot->rotateZ(rotang_bar2);
   G4VSolid* u1 = new G4UnionSolid("MM+bar1", MM_solid, bar_solid, G4Transform3D(*zrot, G4ThreeVector((radius + thickness/2.)*TMath::Cos(rotang_bar2), (radius + thickness/2.)*TMath::Sin(rotang_bar2), 0)));
-  
+
   rotang_bar2 = 360./Ntiles*deg+rotang_bar2-((spacer-barwidth)/radius*radian)-0.5*mm/radius*radian;
   zrot->setDelta(twopi - (360./Ntiles*deg-((spacer-barwidth)/radius*radian) - 90*deg));
   u1 = new G4UnionSolid("MM+bar1+bar2", u1, bar_solid, zrot, G4ThreeVector((radius + thickness/2.)*TMath::Cos(rotang_bar2), (radius + thickness/2.)*TMath::Sin(rotang_bar2), 0));
@@ -343,7 +343,7 @@ void PHG4CylinderStripDetector::ConstructMe(G4LogicalVolume *logicWorld)
                                                   G4Material::GetMaterial("G4_C"),
                                                   "u1_C_logic"
                                                  );
-  
+
   vis = new G4VisAttributes(G4Color(G4Colour::Grey())); // grey is good to see the tracks in the display
   vis->SetForceSolid(false);
   vis->SetVisibility(true);
@@ -363,15 +363,15 @@ void PHG4CylinderStripDetector::ConstructMe(G4LogicalVolume *logicWorld)
   G4LogicalVolume* tile_o_comp_logic = nullptr;
 
   for( int ic = 0; ic < kNcomponents; ic++ ){
- 	  G4UserLimits* g4userlimits_gas = nullptr; 
+ 	  G4UserLimits* g4userlimits_gas = nullptr;
 	  if (ic == Gas2)
 	    g4userlimits_gas = g4userlimits;
 
 	  G4String cname = G4String(GetName())+"_tileC" + "_" + names[ic];
-    
+
     zrot->setDelta(barwidth/radius*radian);
     G4VPhysicalVolume* phys = nullptr;
-    
+
     vis = new G4VisAttributes(G4Color(color[ic])); // grey is good to see the tracks in the display
     vis->SetForceSolid(true);
     vis->SetVisibility(true);
@@ -422,17 +422,17 @@ void PHG4CylinderStripDetector::ConstructMe(G4LogicalVolume *logicWorld)
     if (ic==Gas2)
 	    m_CylinderCPhysicalVolume.insert(phys);
   }
-  
+
   for ( int ic =0; ic < kNcomponents_meca; ic++ ){
 	  G4String cname = G4String(GetName())+"_tileC" + "_" + names_meca[ic];
-    
+
     RM_meca = Rm_meca + thick_meca[ic];
 
     tile_o_comp = new G4Tubs(cname+"_solid",
                              Rm_meca,
                              RM_meca,
-                             m_Params->get_double_param("length") * cm / 2., 
-                             0, 
+                             m_Params->get_double_param("length") * cm / 2.,
+                             0,
                              (spacer-2*barwidth-0.001*mm)/(radius_mecaPCB)*radian
                             );
     tile_o_comp_logic = new G4LogicalVolume(tile_o_comp,
@@ -445,18 +445,18 @@ void PHG4CylinderStripDetector::ConstructMe(G4LogicalVolume *logicWorld)
     tile_o_comp_logic->SetVisAttributes(vis);
     G4RotationMatrix* zrot_tmp = new G4RotationMatrix();
     zrot_tmp->rotateZ(360./Ntiles*deg-(spacer-2*barwidth+1*mm)/radius_mecaPCB*radian);
-    new G4PVPlacement(G4Transform3D(*zrot_tmp, 
+    new G4PVPlacement(G4Transform3D(*zrot_tmp,
                       G4ThreeVector(0,0,0)),
                       tile_o_comp_logic,
                       cname+"_phys",
-                      u1_C_logic, 
-                      false, 
-                      0, 
+                      u1_C_logic,
+                      false,
+                      0,
                       OverlapCheck()
                      );
     Rm_meca = RM_meca;
   }
-  
+
   if (nCZlayer == 2){
     //Rm += gap;
     //RM += gap;
@@ -480,12 +480,12 @@ void PHG4CylinderStripDetector::ConstructMe(G4LogicalVolume *logicWorld)
                       "u1_Z_phys",
                       tile_o_logic, false, 0, OverlapCheck());
     for( int ic = 0; ic < kNcomponents; ic++ ){
-      G4UserLimits* g4userlimits_gas = nullptr; 
+      G4UserLimits* g4userlimits_gas = nullptr;
       if (ic == Gas2)
         g4userlimits_gas = g4userlimits;
-    
+
       G4String cname = G4String(GetName())+"_tileZ" + "_" + names[ic];
-      
+
       RM = Rm + thick[ic];
 
       if (ic == Gas2){
@@ -535,14 +535,14 @@ void PHG4CylinderStripDetector::ConstructMe(G4LogicalVolume *logicWorld)
     }
     for ( int ic =0; ic < kNcomponents_meca; ic++ ){
 	    G4String cname = G4String(GetName())+"_tileZ" + "_" + names_meca[ic];
-      
+
       RM_meca = Rm_meca + thick_meca[ic];
 
       tile_o_comp = new G4Tubs(cname+"_solid",
                                Rm_meca,
                                RM_meca,
-                               m_Params->get_double_param("length") * cm / 2., 
-                               0, 
+                               m_Params->get_double_param("length") * cm / 2.,
+                               0,
                                (spacer-2*barwidth-0.001*mm)/(radius_mecaPCB)*radian
                               );
       tile_o_comp_logic = new G4LogicalVolume(tile_o_comp,
@@ -555,20 +555,20 @@ void PHG4CylinderStripDetector::ConstructMe(G4LogicalVolume *logicWorld)
       tile_o_comp_logic->SetVisAttributes(vis);
       G4RotationMatrix* zrot_tmp2 = new G4RotationMatrix();
       zrot_tmp2->rotateZ(360./Ntiles*deg-(spacer-2*barwidth+1*mm)/radius_mecaPCB*radian);
-      new G4PVPlacement(G4Transform3D(*zrot_tmp2, 
+      new G4PVPlacement(G4Transform3D(*zrot_tmp2,
                         G4ThreeVector(0,0,0)),
                         tile_o_comp_logic,
                         cname+"_phys",
-                        u1_Z_logic, 
-                        false, 
-                        0, 
+                        u1_Z_logic,
+                        false,
+                        0,
                         OverlapCheck()
                        );
       Rm_meca = RM_meca;
     }
   }
 
-  // repeate N tiles 
+  // repeate N tiles
   for( int i=0; i<Ntiles; i++ ){
     G4RotationMatrix* yRot = new G4RotationMatrix;
     yRot->rotateZ(i*360./Ntiles*deg);
@@ -592,15 +592,15 @@ void PHG4CylinderStripDetector::ConstructMe(G4LogicalVolume *logicWorld)
 }
 
 void PHG4CylinderStripDetector::BuildMaterials(){
-  // get the list of chemical elements 
+  // get the list of chemical elements
   // ---------------------------------
-  
+
   //G4Element *N  = G4Element::GetElement( "N" );
   //G4Element *O  = G4Element::GetElement( "O" );
   //G4Element *H  = G4Element::GetElement( "H" );
   //G4Element *C  = G4Element::GetElement( "C" );
-  
-  // get the list of NIST materials 
+
+  // get the list of NIST materials
   // ---------------------------------
   G4Material *G4_N = G4Material::GetMaterial("G4_N");
   G4Material *G4_O = G4Material::GetMaterial("G4_O");
@@ -620,7 +620,7 @@ void PHG4CylinderStripDetector::BuildMaterials(){
   G4double fraction;
   G4double temperature = 298.15*kelvin;
   G4double pressure = 1.*atmosphere;
-  
+
 
   // air
   if (!G4Material::GetMaterial("myAir", false)){
@@ -685,7 +685,7 @@ void PHG4CylinderStripDetector::BuildMaterials(){
 }
 
 G4VSolid* PHG4CylinderStripDetector::GetHollowBar(){
-  double length = m_Params->get_double_param("length") * cm; 
+  double length = m_Params->get_double_param("length") * cm;
   G4VSolid* box1 = new G4Box("bar0", barwidth/2, barwidth/2, (length+barwidth*2)/2);
   G4VSolid* box2 = new G4Box("bar1", 1*mm/2, 1*mm/2, (length+barwidth*2)/2+1*mm);
   G4VSolid* bar = new G4SubtractionSolid("HollowBar", box1, box2);
